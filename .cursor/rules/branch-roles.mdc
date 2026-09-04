@@ -1,0 +1,15 @@
+---
+description: Git branch roles for Pages vs development
+alwaysApply: true
+---
+
+# Branch roles
+
+This repo has two jobs. Do not mix them.
+
+- **`main`**: live GitHub Pages site only. Root is the built `dist` files (`index.html`, `feeding-data.json`, icons). Do not merge source (`src/`, `package.json`, etc.) into `main`.
+- **`dev`**: active development with AI. Source of truth for the Vite app. Work, commits, and PRs happen here.
+
+When publishing: `npm run build` on `dev`, then copy `dist` contents onto `main` and commit there. Do not merge `dev` → `main`.
+
+Stay on `dev` unless the user explicitly asks to update the live Pages files on `main`.
