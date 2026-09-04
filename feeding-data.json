@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-04T10:41:13.989Z",
+  "updatedAt": "2026-09-04T10:41:43.044Z",
   "pets": [
     {
       "id": "21f1c20a-7825-4752-8c5a-d920c4658d50",
@@ -46,7 +46,7 @@
     },
     {
       "id": "a06c4a8c-9e6e-4375-a13e-4122fad28332",
-      "name": "Retic. Purple",
+      "name": "Retic. Purple 1kg",
       "species": "Reticulated Python",
       "morphs": [
         "Albino (Purple Phase)"
