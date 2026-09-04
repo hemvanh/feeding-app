@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-04T08:01:27.931Z",
+  "updatedAt": "2026-09-04T08:21:53.743Z",
   "pets": [
     {
       "id": "21f1c20a-7825-4752-8c5a-d920c4658d50",
@@ -12,6 +12,16 @@
       ],
       "feedingPeriodDays": 4,
       "createdAt": "2026-09-03T19:26:54.800Z"
+    },
+    {
+      "id": "732d4167-464c-4698-89ea-6a7d61f79647",
+      "name": "Bull Frog",
+      "species": "Bull Frog",
+      "morphs": [
+        "Normal / Wild Type"
+      ],
+      "feedingPeriodDays": 5,
+      "createdAt": "2026-09-04T08:21:53.488Z"
     },
     {
       "id": "c46785d7-af1b-4305-aee7-611a3a675fbc",
