@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { ConfirmDialog } from './components/ConfirmDialog'
 import { ExtendForm, FeedingForm } from './components/FeedingForm'
 import { MiniCalendar } from './components/MiniCalendar'
 import { PetForm } from './components/PetForm'
@@ -217,6 +218,9 @@ function PetPage({ id }: { id: string }) {
   const status = dueStatus(schedule.nextDueDate)
   const [tab, setTab] = useState<'feed' | 'extend'>('feed')
   const [feedDate, setFeedDate] = useState(todayISO)
+  const [pendingDelete, setPendingDelete] = useState<{ kind: 'pet' } | { kind: 'feeding'; id: string } | null>(
+    null,
+  )
 
   if (!loaded) {
     return (
@@ -271,16 +275,7 @@ function PetPage({ id }: { id: string }) {
           <button type="button" className="ghost-btn" onClick={() => go(`/pet/${pet.id}/edit`)}>
             Edit pet
           </button>
-          <button
-            type="button"
-            className="danger-btn"
-            onClick={async () => {
-              if (!window.confirm(`Delete ${pet.name} and all feeding records?`)) return
-              await db.feedings.where('petId').equals(pet.id).delete()
-              await db.pets.delete(pet.id)
-              go('/')
-            }}
-          >
+          <button type="button" className="danger-btn" onClick={() => setPendingDelete({ kind: 'pet' })}>
             Delete
           </button>
         </div>
@@ -351,10 +346,7 @@ function PetPage({ id }: { id: string }) {
                 <button
                   type="button"
                   className="text-btn"
-                  onClick={async () => {
-                    if (!window.confirm('Delete this record?')) return
-                    await db.feedings.delete(event.id)
-                  }}
+                  onClick={() => setPendingDelete({ kind: 'feeding', id: event.id })}
                 >
                   Remove
                 </button>
@@ -363,6 +355,32 @@ function PetPage({ id }: { id: string }) {
           </ul>
         )}
       </section>
+      {pendingDelete?.kind === 'pet' ? (
+        <ConfirmDialog
+          title={`Delete ${pet.name}?`}
+          message="This removes the pet and every feeding record. This cannot be undone."
+          onCancel={() => setPendingDelete(null)}
+          onConfirm={() => {
+            void (async () => {
+              await db.feedings.where('petId').equals(pet.id).delete()
+              await db.pets.delete(pet.id)
+              go('/')
+            })()
+          }}
+        />
+      ) : null}
+      {pendingDelete?.kind === 'feeding' ? (
+        <ConfirmDialog
+          title="Delete this feeding?"
+          message="This record will be removed from the history. This cannot be undone."
+          onCancel={() => setPendingDelete(null)}
+          onConfirm={() => {
+            const id = pendingDelete.id
+            setPendingDelete(null)
+            void db.feedings.delete(id)
+          }}
+        />
+      ) : null}
     </AppShell>
   )
 }

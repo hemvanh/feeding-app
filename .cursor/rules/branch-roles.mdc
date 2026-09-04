@@ -1,7 +1,11 @@
 ---
-description: Git branch roles for Pages vs development
+description: feeding-app only — Pages main vs source dev, and the publish all phrase
 alwaysApply: true
 ---
+
+# Scope
+
+This rule applies **only** to this project: the local Feeding App workspace and GitHub repo `hemvanh/feeding-app`. Do not use these branch roles or the **publish all** phrase in any other repo.
 
 # Branch roles
 
@@ -13,3 +17,15 @@ This repo has two jobs. Do not mix them.
 When publishing: `npm run build` on `dev`, then copy `dist` contents onto `main` and commit there. Do not merge `dev` → `main`.
 
 Stay on `dev` unless the user explicitly asks to update the live Pages files on `main`.
+
+# Phrase: "publish all"
+
+When the user says **publish all**, do this in order without asking again:
+
+1. On **`dev`**: stage only the relevant source changes, commit, and `git push origin dev`.
+2. On **`dev`**: run `npm run build`.
+3. Copy built `dist` files onto **`main`** (`index.html`, `favicon.svg`, `icons.svg`). Do **not** overwrite live `feeding-data.json` unless the user asks. Do **not** commit `dist/` or `node_modules/` onto `main`. Do **not** merge `dev` into `main`.
+4. Commit and `git push origin main`.
+5. Check out **`dev`** again and leave that as the active branch.
+
+Skip an empty `dev` commit if there is nothing to commit; still build and update `main` if the live site needs the latest build.
