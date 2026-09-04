@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-04T10:41:52.287Z",
+  "updatedAt": "2026-09-04T10:45:06.197Z",
   "pets": [
     {
       "id": "21f1c20a-7825-4752-8c5a-d920c4658d50",
@@ -56,7 +56,7 @@
     },
     {
       "id": "c46785d7-af1b-4305-aee7-611a3a675fbc",
-      "name": "Gấm GC Sunfire Alb.",
+      "name": "Retic. GC Sunfire Alb.",
       "species": "Reticulated Python",
       "morphs": [
         "Golden Child",
