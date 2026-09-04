@@ -1,9 +1,41 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { db } from '../db'
 import { deleteGitHubFile, isGitHubConnected, putGitHubBytes } from '../github'
 import type { Pet } from '../types'
-import { compressCover, coverPhotoPath, setLocalCoverPreview, useCoverSrc } from '../utils/coverPhoto'
+import {
+  commitCoverToRemote,
+  compressCover,
+  coverPhotoPath,
+  coverRemoteUrl,
+  coverSrcCandidates,
+  setCoverStampOverride,
+  setLocalCoverPreview,
+  useCoverSrc,
+  waitForCoverImage,
+} from '../utils/coverPhoto'
 import { ConfirmDialog } from './ConfirmDialog'
+
+function CoverImage({ pet, className, alt }: { pet: Pet; className: string; alt: string }) {
+  useCoverSrc(pet)
+  const candidates = coverSrcCandidates(pet)
+  const [failCount, setFailCount] = useState(0)
+  const signature = `${pet.id}:${candidates.join('|')}`
+  useEffect(() => {
+    setFailCount(0)
+  }, [signature])
+  const src = candidates[failCount]
+  if (!src) return <div className={`${className} placeholder`} aria-hidden />
+  return (
+    <img
+      key={src}
+      className={className}
+      src={src}
+      alt={alt}
+      referrerPolicy="no-referrer"
+      onError={() => setFailCount((count) => count + 1)}
+    />
+  )
+}
 
 export function CoverPhoto({ pet, editable = true }: { pet: Pet; editable?: boolean }) {
   const input = useRef<HTMLInputElement>(null)
@@ -24,19 +56,19 @@ export function CoverPhoto({ pet, editable = true }: { pet: Pet; editable?: bool
       const bytes = await compressCover(file)
       setLocalCoverPreview(pet.id, bytes)
       const stamp = String(Date.now())
-      await putGitHubBytes(coverPhotoPath(pet.id, stamp), bytes, `Update cover photo for ${pet.name}`)
-      if (pet.coverAt) {
-        const previous = coverPhotoPath(pet.id, pet.coverAt)
-        const next = coverPhotoPath(pet.id, stamp)
-        if (previous !== next) {
-          try {
-            await deleteGitHubFile(previous, `Replace cover photo for ${pet.name}`)
-          } catch {
-            /* old file may already be gone */
-          }
+      const nextPath = coverPhotoPath(pet.id, stamp)
+      await putGitHubBytes(nextPath, bytes, `Update cover photo for ${pet.name}`)
+      await db.pets.update(pet.id, { coverAt: stamp })
+      const remote = coverRemoteUrl(pet.id, stamp)
+      if (remote) await waitForCoverImage(remote)
+      commitCoverToRemote(pet.id, stamp)
+      if (pet.coverAt && coverPhotoPath(pet.id, pet.coverAt) !== nextPath) {
+        try {
+          await deleteGitHubFile(coverPhotoPath(pet.id, pet.coverAt), `Replace cover photo for ${pet.name}`)
+        } catch {
+          /* old file may already be gone */
         }
       }
-      await db.pets.update(pet.id, { coverAt: stamp })
     } catch (err) {
       setLocalCoverPreview(pet.id, null)
       setError(err instanceof Error ? err.message : 'Could not save this photo.')
@@ -55,6 +87,7 @@ export function CoverPhoto({ pet, editable = true }: { pet: Pet; editable?: bool
         await deleteGitHubFile(coverPhotoPath(pet.id, pet.coverAt), `Remove cover photo for ${pet.name}`)
       }
       setLocalCoverPreview(pet.id, null)
+      setCoverStampOverride(pet.id, null)
       await db.pets.update(pet.id, { coverAt: '' })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not remove this photo.')
@@ -67,7 +100,7 @@ export function CoverPhoto({ pet, editable = true }: { pet: Pet; editable?: bool
     if (!src) return null
     return (
       <div className="cover-photo">
-        <img key={src} className="cover-photo-img" src={src} alt={`${pet.name} cover`} />
+        <CoverImage pet={pet} className="cover-photo-img" alt={`${pet.name} cover`} />
       </div>
     )
   }
@@ -75,7 +108,7 @@ export function CoverPhoto({ pet, editable = true }: { pet: Pet; editable?: bool
   return (
     <div className="cover-photo">
       {src ? (
-        <img key={src} className="cover-photo-img" src={src} alt={`${pet.name} cover`} />
+        <CoverImage pet={pet} className="cover-photo-img" alt={`${pet.name} cover`} />
       ) : (
         <div className="cover-photo-img placeholder" aria-hidden>
           No photo
@@ -120,5 +153,5 @@ export function CoverPhoto({ pet, editable = true }: { pet: Pet; editable?: bool
 export function CoverThumb({ pet }: { pet: Pet }) {
   const src = useCoverSrc(pet)
   if (!src) return <div className="cover-thumb placeholder" aria-hidden />
-  return <img key={src} className="cover-thumb" src={src} alt="" />
+  return <CoverImage pet={pet} className="cover-thumb" alt="" />
 }

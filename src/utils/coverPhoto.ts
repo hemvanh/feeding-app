@@ -36,29 +36,82 @@ export function setLocalCoverPreview(petId: string, bytes: Uint8Array | null) {
   emitLocalCovers()
 }
 
-export function coverPhotoPath(petId: string, coverAt?: string): string {
-  if (coverAt && /^\d+$/.test(coverAt)) return `pet-photos/${petId}-${coverAt}.jpg`
+export function coverPhotoPath(petId: string, coverAt?: string | number): string {
+  const stamp = coverAt === undefined || coverAt === '' ? '' : String(coverAt)
+  if (stamp && /^\d+$/.test(stamp)) return `pet-photos/${petId}-${stamp}.jpg`
   return `pet-photos/${petId}.jpg`
 }
 
-export function coverPhotoUrl(pet: Pet): string | null {
-  if (!pet.coverAt) return null
+function repoParts(): { owner: string; repo: string } | null {
   const guessed = guessGitHubRepo()
   const { owner, repo } = getGitHubSettings()
   const o = owner || guessed?.owner
   const r = repo || guessed?.repo
   if (!o || !r) return null
-  const file = coverPhotoPath(pet.id, pet.coverAt)
-  if (window.location.hostname.endsWith('.github.io')) {
-    const folder = window.location.pathname.replace(/\/index\.html$/i, '').replace(/\/$/, '')
-    return `${window.location.origin}${folder}/${file}`
-  }
-  return `https://raw.githubusercontent.com/${o}/${r}/main/${file}`
+  return { owner: o, repo: r }
+}
+
+const coverStampOverride = new Map<string, string>()
+
+export function setCoverStampOverride(petId: string, stamp: string | null) {
+  if (stamp) coverStampOverride.set(petId, stamp)
+  else coverStampOverride.delete(petId)
+  emitLocalCovers()
+}
+
+function effectiveCoverAt(pet: Pet): string {
+  return coverStampOverride.get(pet.id) || (pet.coverAt ? String(pet.coverAt) : '')
+}
+
+export function coverSrcCandidates(pet: Pet): string[] {
+  const urls: string[] = []
+  const local = localCoverUrls.get(pet.id)
+  const stamp = effectiveCoverAt(pet)
+  const remote = stamp ? coverRemoteUrl(pet.id, stamp) : null
+  if (local) urls.push(local)
+  if (remote) urls.push(remote)
+  return urls
+}
+
+export function coverRemoteUrl(petId: string, coverAt: string): string | null {
+  const parts = repoParts()
+  if (!parts || !coverAt) return null
+  return `https://raw.githubusercontent.com/${parts.owner}/${parts.repo}/main/${coverPhotoPath(petId, coverAt)}`
+}
+
+export function commitCoverToRemote(petId: string, stamp: string) {
+  const previous = localCoverUrls.get(petId)
+  if (previous) URL.revokeObjectURL(previous)
+  localCoverUrls.delete(petId)
+  coverStampOverride.set(petId, stamp)
+  emitLocalCovers()
+}
+
+export function waitForCoverImage(url: string, ms = 8000): Promise<void> {
+  return new Promise((resolve) => {
+    const img = new Image()
+    const done = () => resolve()
+    const timer = window.setTimeout(done, ms)
+    img.onload = () => {
+      window.clearTimeout(timer)
+      done()
+    }
+    img.onerror = () => {
+      window.clearTimeout(timer)
+      done()
+    }
+    img.referrerPolicy = 'no-referrer'
+    img.src = url
+  })
+}
+
+export function coverPhotoUrl(pet: Pet): string | null {
+  return coverSrcCandidates(pet)[0] ?? null
 }
 
 export function useCoverSrc(pet: Pet): string | null {
   useSyncExternalStore(subscribeLocalCovers, localCoverVersionSnapshot, localCoverVersionSnapshot)
-  return localCoverUrls.get(pet.id) ?? coverPhotoUrl(pet)
+  return coverSrcCandidates(pet)[0] ?? null
 }
 
 export async function compressCover(file: File): Promise<Uint8Array> {

@@ -40,6 +40,7 @@ export type SyncStatus = {
 const listeners = new Set<() => void>()
 let applyingRemote = false
 let pushTimer: number | null = null
+let pushing = false
 let lastPushedAt = ''
 let lastAppliedAt = ''
 let pollTimer: number | null = null
@@ -151,41 +152,47 @@ function githubLabel() {
 }
 
 export async function pushToFile() {
-  const dump = await snapshot()
-  const body = `${JSON.stringify(dump, null, 2)}\n`
+  pushing = true
+  try {
+    const dump = await snapshot()
+    const body = `${JSON.stringify(dump, null, 2)}\n`
 
-  if (isGitHubConnected()) {
-    await pushGitHubJson(body)
-    lastPushedAt = dump.updatedAt
+    if (isGitHubConnected()) {
+      await pushGitHubJson(body)
+      lastPushedAt = dump.updatedAt
+      setStatus({
+        connected: true,
+        fileName: DATA_FILE_NAME,
+        message: 'Synced to GitHub feeding-data.json.',
+      })
+      return
+    }
+
+    const handle = await getHandle()
+    if (!handle) return
+    if (!(await ensurePermission(handle, 'readwrite'))) {
+      setStatus({
+        connected: false,
+        message: 'Permission to write the data file was denied. Connect the file again.',
+      })
+      return
+    }
+    await writeDump(handle, dump)
     setStatus({
       connected: true,
-      fileName: DATA_FILE_NAME,
-      message: 'Synced to GitHub feeding-data.json.',
+      fileName: handle.name,
+      message: `Synced to ${handle.name}`,
     })
-    return
+  } finally {
+    pushing = false
   }
-
-  const handle = await getHandle()
-  if (!handle) return
-  if (!(await ensurePermission(handle, 'readwrite'))) {
-    setStatus({
-      connected: false,
-      message: 'Permission to write the data file was denied. Connect the file again.',
-    })
-    return
-  }
-  await writeDump(handle, dump)
-  setStatus({
-    connected: true,
-    fileName: handle.name,
-    message: `Synced to ${handle.name}`,
-  })
 }
 
 function queuePush() {
-  if (applyingRemote) return
+  if (applyingRemote || pushing) return
   if (pushTimer !== null) window.clearTimeout(pushTimer)
   pushTimer = window.setTimeout(() => {
+    pushTimer = null
     void pushToFile().catch((error: unknown) => {
       console.error(error)
       setStatus({ message: error instanceof Error ? error.message : 'Could not write the data file.' })
@@ -194,6 +201,7 @@ function queuePush() {
 }
 
 async function pullFromFile() {
+  if (pushTimer !== null || pushing) return
   if (isGitHubConnected()) {
     const text = await pullGitHubJson()
     if (text === null) {
