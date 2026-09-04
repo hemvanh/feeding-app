@@ -70,7 +70,7 @@ export function MiniCalendar({
         ))}
         {cells.map((iso, i) => {
           if (!iso) return <div key={`empty-${i}`} />
-          const bg = cycleColor(iso, cycles, today)
+          const tint = cycleColor(iso, cycles, today)
           const isToday = iso === today
           const isFed = cycles.some((cycle) => cycle.fedDate === iso)
           const isDue = iso === nextDueDate
@@ -81,7 +81,8 @@ export function MiniCalendar({
             isFed ? 'is-fed' : '',
             isDue ? 'is-due' : '',
             isSelected ? 'is-selected' : '',
-            bg ? 'has-cycle' : '',
+            tint ? 'has-cycle' : '',
+            tint?.washed ? 'is-preview' : '',
           ]
             .filter(Boolean)
             .join(' ')
@@ -90,9 +91,17 @@ export function MiniCalendar({
             ? 'Fed'
             : isDue
               ? 'Next feeding'
-              : bg
-                ? 'Cycle progress'
-                : undefined
+              : tint?.washed
+                ? 'Upcoming cycle'
+                : tint
+                  ? 'Cycle progress'
+                  : undefined
+
+          const style = tint
+            ? tint.washed
+              ? { background: tint.color }
+              : { background: tint.color, color: '#fff' }
+            : undefined
 
           if (onSelectDate) {
             return (
@@ -100,7 +109,7 @@ export function MiniCalendar({
                 key={iso}
                 type="button"
                 className={classes}
-                style={bg ? { background: bg, color: '#fff' } : undefined}
+                style={style}
                 title={title}
                 onClick={() => onSelectDate(iso)}
               >
@@ -113,7 +122,7 @@ export function MiniCalendar({
             <div
               key={iso}
               className={classes}
-              style={bg ? { background: bg, color: '#fff' } : undefined}
+              style={style}
               title={title}
             >
               {parseISO(iso).getDate()}

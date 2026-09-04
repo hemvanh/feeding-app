@@ -308,8 +308,10 @@ input, select, textarea {
   background: #f3f6f0;
 }
 .calendar-cell.is-today {
-  outline: 2px dashed #d4a017;
-  outline-offset: -2px;
+  outline: 3px dashed #ffd24a;
+  outline-offset: -3px;
+  box-shadow: 0 0 0 2px rgba(17, 24, 17, 0.55), 0 0 10px rgba(255, 210, 74, 0.7);
+  font-weight: 800;
 }
 .calendar-cell.is-fed {
   font-weight: 800;
@@ -321,9 +323,9 @@ input, select, textarea {
   box-shadow: 0 0 0 3px #3b9eff;
 }
 .calendar-cell.is-today.is-selected {
-  outline: 2px dashed #d4a017;
-  outline-offset: -3px;
-  box-shadow: 0 0 0 3px #3b9eff;
+  outline: 3px dashed #ffd24a;
+  outline-offset: -4px;
+  box-shadow: 0 0 0 3px #3b9eff, 0 0 10px rgba(255, 210, 74, 0.7);
 }
 button.calendar-cell {
   border: 0;
@@ -365,8 +367,9 @@ button.calendar-cell {
   vertical-align: -2px;
 }
 .mark.today {
-  border: 2px dashed #d4a017;
+  border: 3px dashed #ffd24a;
   background: transparent;
+  box-shadow: 0 0 6px rgba(255, 210, 74, 0.7);
 }
 .mark.selected {
   box-shadow: 0 0 0 3px #3b9eff;

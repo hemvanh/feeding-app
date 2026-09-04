@@ -98,19 +98,27 @@ export function dueLabel(nextDueDate: string | null, today = todayISO()): string
   return `Due in ${delta} day${delta === 1 ? '' : 's'}`
 }
 
-function hslForProgress(progress: number): string {
+function hslForProgress(progress: number, washed = false): string {
   const t = Math.min(Math.max(progress, 0), 1)
   const hue = 142 - t * 134
   const sat = 52 + t * 22
   const light = 38 - t * 6
+  if (washed) {
+    return `hsl(${hue} ${Math.round(sat * 0.42)}% ${Math.min(light + 32, 72)}% / 0.55)`
+  }
   return `hsl(${hue} ${sat}% ${light}%)`
+}
+
+export type CycleTint = {
+  color: string
+  washed: boolean
 }
 
 export function cycleColor(
   day: string,
   cycles: FeedingCycle[],
   today = todayISO(),
-): string | null {
+): CycleTint | null {
   let match: FeedingCycle | null = null
   for (const cycle of cycles) {
     if (day < cycle.fedDate) continue
@@ -118,10 +126,14 @@ export function cycleColor(
     match = cycle
   }
   if (!match) return null
-  if (day > today) return null
-
-  if (day > match.dueDate) return hslForProgress(1)
 
   const span = Math.max(daysBetween(match.fedDate, match.dueDate), 1)
-  return hslForProgress(daysBetween(match.fedDate, day) / span)
+  const progress = day > match.dueDate ? 1 : daysBetween(match.fedDate, day) / span
+
+  if (day > today) {
+    if (day > match.dueDate) return null
+    return { color: hslForProgress(progress, true), washed: true }
+  }
+
+  return { color: hslForProgress(progress), washed: false }
 }
