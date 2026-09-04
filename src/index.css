@@ -64,8 +64,34 @@ button, input, select, textarea {
   display: grid;
   gap: 8px;
 }
+.sync-bar.collapsed {
+  padding: 6px 12px;
+  gap: 0;
+}
 .sync-bar p { margin: 0; font-size: 0.9rem; color: var(--muted); }
 .sync-bar strong { color: var(--ink); }
+.sync-toggle {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0;
+  padding: 2px 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  font-size: 0.88rem;
+  color: var(--green-2);
+  font-weight: 650;
+}
+.sync-toggle-file,
+.sync-toggle-hint {
+  color: var(--muted);
+  font-weight: 500;
+}
+.sync-toggle-hint { flex-shrink: 0; font-size: 0.8rem; }
 .sync-github {
   display: grid;
   gap: 8px;
