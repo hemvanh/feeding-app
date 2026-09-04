@@ -6,6 +6,8 @@ export const SPECIES = [
   'Hognose Snake',
   'Reticulated Python',
   'Burmese Python',
+  'Tegu',
+  'Iguana',
   'Pacman Frog',
   'Bull Frog',
 ] as const
