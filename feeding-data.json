@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-04T14:47:35.967Z",
+  "updatedAt": "2026-09-04T14:57:35.740Z",
   "pets": [
     {
       "id": "21f1c20a-7825-4752-8c5a-d920c4658d50",
@@ -43,7 +43,7 @@
       ],
       "feedingPeriodDays": 5,
       "createdAt": "2026-09-04T08:21:53.488Z",
-      "coverAt": "2026-09-04T14:47:35.714Z"
+      "coverAt": ""
     },
     {
       "id": "a06c4a8c-9e6e-4375-a13e-4122fad28332",
