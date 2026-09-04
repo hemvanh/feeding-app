@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-04T16:04:25.999Z",
+  "updatedAt": "2026-09-04T16:04:50.975Z",
   "pets": [
     {
       "id": "21f1c20a-7825-4752-8c5a-d920c4658d50",
@@ -80,7 +80,8 @@
         "Sable"
       ],
       "feedingPeriodDays": 4,
-      "createdAt": "2026-09-03T19:28:13.402Z"
+      "createdAt": "2026-09-03T19:28:13.402Z",
+      "coverAt": "1788537887804"
     }
   ],
   "feedings": [
