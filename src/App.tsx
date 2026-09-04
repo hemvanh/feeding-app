@@ -8,7 +8,7 @@ import { db, newId } from './db'
 import { useAllFeedings, useFeedings, usePet, usePets } from './hooks/useDb'
 import type { FeedingEvent, FeedingOutcome, Pet } from './types'
 import { formatPretty, todayISO } from './utils/dates'
-import { computeSchedule, dueLabel, dueStatus, buildCycles } from './utils/schedule'
+import { computeSchedule, dueLabel, dueStatus, buildCycles, wasFedToday } from './utils/schedule'
 
 type Route =
   | { name: 'home' }
@@ -87,6 +87,7 @@ function HomePage() {
           pet,
           schedule,
           status: dueStatus(schedule.nextDueDate),
+          fedToday: wasFedToday(schedule.lastFedDate),
           cycles: buildCycles(pet, petEvents),
         }
       })
@@ -128,8 +129,8 @@ function HomePage() {
         </section>
       ) : (
         <div className="pet-grid">
-          {cards.map(({ pet, schedule, status, cycles }) => (
-            <article key={pet.id} className={`pet-card status-${status}`}>
+          {cards.map(({ pet, schedule, status, fedToday, cycles }) => (
+            <article key={pet.id} className={`pet-card status-${fedToday ? 'fed-today' : status}`}>
               <button type="button" className="pet-card-hit" onClick={() => go(`/pet/${pet.id}`)}>
                 <div className="pet-card-head">
                   <div className="pet-card-titles">
@@ -139,7 +140,9 @@ function HomePage() {
                       {pet.morphs.length ? pet.morphs.join(' / ') : '\u00a0'}
                     </p>
                   </div>
-                  <span className={`badge ${status}`}>{dueLabel(schedule.nextDueDate)}</span>
+                  <span className={`badge ${fedToday ? 'fed-today' : status}`}>
+                    {fedToday ? 'Fed today' : dueLabel(schedule.nextDueDate)}
+                  </span>
                 </div>
               </button>
               <MiniCalendar cycles={cycles} nextDueDate={schedule.nextDueDate} />
@@ -201,6 +204,7 @@ function EditPetPage({ id }: { id: string }) {
         <PetForm
           initial={pet}
           submitLabel="Save changes"
+          confirmSave
           onSubmit={async (data) => {
             await db.pets.update(pet.id, data)
             go(`/pet/${pet.id}`)
@@ -307,7 +311,7 @@ function PetPage({ id }: { id: string }) {
             date={feedDate}
             onSubmit={async (data) => {
               await saveEvent(data)
-              setFeedDate(todayISO())
+              go('/')
             }}
           />
         ) : (
@@ -320,6 +324,7 @@ function PetPage({ id }: { id: string }) {
                 outcome: 'extended',
                 extensionDays: days,
               })
+              go('/')
             }}
           />
         )}

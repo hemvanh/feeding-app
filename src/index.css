@@ -277,6 +277,7 @@ input, select, textarea {
 }
 
 .badge.upcoming, .pill.fed { background: #e5f6ea; color: var(--green-2); }
+.badge.fed-today { background: #d8f0df; color: var(--green-2); }
 .badge.today { background: #fff4d6; color: var(--amber); }
 .badge.overdue, .pill.refused, .pill.regurgitated { background: #fde8e6; color: var(--red); }
 .badge.none, .pill.extended { background: #eef1ea; color: var(--muted); }
@@ -416,6 +417,9 @@ button.calendar-cell {
 }
 .morph-search { display: grid; gap: 8px; }
 
+.tabs {
+  margin-bottom: 16px;
+}
 .tabs button {
   border: 0;
   background: #eef1ea;
@@ -484,6 +488,7 @@ button.calendar-cell {
 
 .status-overdue { box-shadow: 0 0 0 2px #f7c1bb, var(--shadow); }
 .status-today { box-shadow: 0 0 0 2px #f6d889, var(--shadow); }
+.status-fed-today { box-shadow: 0 0 0 2px #b6dfc2, var(--shadow); }
 
 @media (max-width: 640px) {
   .app { padding: 12px 12px 28px; }

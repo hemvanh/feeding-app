@@ -2,12 +2,14 @@ export function ConfirmDialog({
   title,
   message,
   confirmLabel = 'Delete',
+  confirmKind = 'danger',
   onConfirm,
   onCancel,
 }: {
   title: string
   message: string
   confirmLabel?: string
+  confirmKind?: 'danger' | 'primary'
   onConfirm: () => void
   onCancel: () => void
 }) {
@@ -26,7 +28,11 @@ export function ConfirmDialog({
           <button type="button" className="ghost-btn" onClick={onCancel}>
             Cancel
           </button>
-          <button type="button" className="danger-btn" onClick={onConfirm}>
+          <button
+            type="button"
+            className={confirmKind === 'primary' ? 'primary-btn compact' : 'danger-btn'}
+            onClick={onConfirm}
+          >
             {confirmLabel}
           </button>
         </div>

@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import type { FeedingOutcome } from '../types'
 import { formatPretty } from '../utils/dates'
+import { ConfirmDialog } from './ConfirmDialog'
 
 const EXTENSION_DEFAULTS: Record<'refused' | 'regurgitated', number> = {
   refused: 1,
@@ -22,10 +23,16 @@ export function FeedingForm({ date, onSubmit }: FeedingFormProps) {
   const [outcome, setOutcome] = useState<FeedingOutcome>('fed')
   const [extensionDays, setExtensionDays] = useState(String(EXTENSION_DEFAULTS.refused))
   const [error, setError] = useState('')
+  const [pending, setPending] = useState<{
+    date: string
+    note: string
+    outcome: FeedingOutcome
+    extensionDays: number
+  } | null>(null)
 
   const failed = outcome === 'refused' || outcome === 'regurgitated'
 
-  async function handleSubmit(event: FormEvent) {
+  function handleSubmit(event: FormEvent) {
     event.preventDefault()
     const extra = failed || outcome === 'extended' ? Number(extensionDays) : 0
     if (!date) {
@@ -37,12 +44,19 @@ export function FeedingForm({ date, onSubmit }: FeedingFormProps) {
       return
     }
     setError('')
-    await onSubmit({
+    setPending({
       date,
       note: note.trim(),
       outcome,
       extensionDays: extra,
     })
+  }
+
+  async function confirmAdd() {
+    if (!pending) return
+    const data = pending
+    setPending(null)
+    await onSubmit(data)
     setNote('')
     setOutcome('fed')
     setExtensionDays(String(EXTENSION_DEFAULTS.refused))
@@ -108,8 +122,18 @@ export function FeedingForm({ date, onSubmit }: FeedingFormProps) {
       </label>
       {error ? <p className="error">{error}</p> : null}
       <button type="submit" className="primary-btn">
-        Save feeding
+        Add Feeding
       </button>
+      {pending ? (
+        <ConfirmDialog
+          title="Add this feeding?"
+          message={`Record ${pending.outcome === 'fed' ? 'Ate' : pending.outcome === 'refused' ? 'Refused' : pending.outcome === 'regurgitated' ? 'Regurgitated' : 'Extended'} on ${formatPretty(pending.date)}.`}
+          confirmLabel="Add Feeding"
+          confirmKind="primary"
+          onCancel={() => setPending(null)}
+          onConfirm={() => void confirmAdd()}
+        />
+      ) : null}
     </form>
   )
 }
@@ -123,8 +147,9 @@ export function ExtendForm({ defaultDays, onSubmit }: ExtendFormProps) {
   const [days, setDays] = useState(String(defaultDays))
   const [note, setNote] = useState('')
   const [error, setError] = useState('')
+  const [pending, setPending] = useState<{ days: number; note: string } | null>(null)
 
-  async function handleSubmit(event: FormEvent) {
+  function handleSubmit(event: FormEvent) {
     event.preventDefault()
     const extra = Number(days)
     if (!Number.isFinite(extra) || extra < 1) {
@@ -132,7 +157,14 @@ export function ExtendForm({ defaultDays, onSubmit }: ExtendFormProps) {
       return
     }
     setError('')
-    await onSubmit(Math.round(extra), note.trim())
+    setPending({ days: Math.round(extra), note: note.trim() })
+  }
+
+  async function confirmExtend() {
+    if (!pending) return
+    const data = pending
+    setPending(null)
+    await onSubmit(data.days, data.note)
     setNote('')
   }
 
@@ -155,6 +187,16 @@ export function ExtendForm({ defaultDays, onSubmit }: ExtendFormProps) {
       <button type="submit" className="primary-btn">
         Extend next feeding
       </button>
+      {pending ? (
+        <ConfirmDialog
+          title="Extend next feeding?"
+          message={`Push the next due date later by ${pending.days} day${pending.days === 1 ? '' : 's'}.`}
+          confirmLabel="Extend"
+          confirmKind="primary"
+          onCancel={() => setPending(null)}
+          onConfirm={() => void confirmExtend()}
+        />
+      ) : null}
     </form>
   )
 }

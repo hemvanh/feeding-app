@@ -86,6 +86,10 @@ export function dueStatus(nextDueDate: string | null, today = todayISO()): DueSt
   return 'upcoming'
 }
 
+export function wasFedToday(lastFedDate: string | null, today = todayISO()): boolean {
+  return lastFedDate === today
+}
+
 export function dueLabel(nextDueDate: string | null, today = todayISO()): string {
   if (!nextDueDate) return 'No feeding recorded yet'
   const delta = daysBetween(today, nextDueDate)
