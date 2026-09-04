@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-04T17:45:19.745Z",
+  "updatedAt": "2026-09-04T17:56:26.012Z",
   "pets": [
     {
       "id": "21f1c20a-7825-4752-8c5a-d920c4658d50",
@@ -46,7 +46,9 @@
       ],
       "feedingPeriodDays": 5,
       "createdAt": "2026-09-04T08:21:53.488Z",
-      "coverAt": "1788543328703"
+      "coverAt": "1788543328703",
+      "feederType": "Dubia",
+      "feederWeightGrams": 10
     },
     {
       "id": "a06c4a8c-9e6e-4375-a13e-4122fad28332",
