@@ -30,6 +30,7 @@ export type Pet = {
   morphs: string[]
   feedingPeriodDays: number
   createdAt: string
+  coverAt?: string
 }
 
 export type FeedingEvent = {

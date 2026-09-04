@@ -67,10 +67,10 @@ function fromBase64(encoded: string): string {
   return new TextDecoder().decode(bytes)
 }
 
-async function request(method: string, body?: unknown): Promise<Response> {
+async function requestContents(path: string, method: string, body?: unknown): Promise<Response> {
   const { token, owner, repo } = getGitHubSettings()
   if (!token || !owner || !repo) throw new Error('Paste GitHub owner, repo, and token first.')
-  return fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${FILE_PATH}`, {
+  return fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
     method,
     headers: {
       Accept: 'application/vnd.github+json',
@@ -80,6 +80,43 @@ async function request(method: string, body?: unknown): Promise<Response> {
     },
     body: body ? JSON.stringify(body) : undefined,
   })
+}
+
+function bytesToBase64(bytes: Uint8Array): string {
+  const chunk = 0x8000
+  let binary = ''
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunk))
+  }
+  return btoa(binary)
+}
+
+async function fileSha(path: string): Promise<string | null> {
+  const response = await requestContents(path, 'GET')
+  if (response.status === 404) return null
+  if (!response.ok) throw new Error(await readError(response))
+  const data = (await response.json()) as { sha: string }
+  return data.sha
+}
+
+export async function putGitHubBytes(path: string, bytes: Uint8Array, message: string) {
+  const sha = await fileSha(path)
+  const response = await requestContents(path, 'PUT', {
+    message,
+    content: bytesToBase64(bytes),
+    ...(sha ? { sha } : {}),
+  })
+  if (!response.ok) throw new Error(await readError(response))
+}
+
+export async function deleteGitHubFile(path: string, message: string) {
+  const sha = await fileSha(path)
+  if (!sha) return
+  const response = await requestContents(path, 'DELETE', {
+    message,
+    sha,
+  })
+  if (!response.ok && response.status !== 404) throw new Error(await readError(response))
 }
 
 async function readError(response: Response): Promise<string> {
@@ -93,7 +130,7 @@ async function readError(response: Response): Promise<string> {
 }
 
 export async function pullGitHubJson(): Promise<string | null> {
-  const response = await request('GET')
+  const response = await requestContents(FILE_PATH, 'GET')
   if (response.status === 404) {
     lastSha = ''
     return null
@@ -106,7 +143,7 @@ export async function pullGitHubJson(): Promise<string | null> {
 
 export async function pushGitHubJson(text: string) {
   for (let attempt = 0; attempt < 2; attempt++) {
-    const response = await request('PUT', {
+    const response = await requestContents(FILE_PATH, 'PUT', {
       message: 'Update feeding data',
       content: toBase64(text),
       ...(lastSha ? { sha: lastSha } : {}),
