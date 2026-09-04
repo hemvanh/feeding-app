@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 import { db } from '../db'
 import { deleteGitHubFile, isGitHubConnected, putGitHubBytes } from '../github'
 import type { Pet } from '../types'
-import { compressCover, coverPhotoPath, coverPhotoUrl } from '../utils/coverPhoto'
+import { compressCover, coverPhotoPath, setLocalCoverPreview, useCoverSrc } from '../utils/coverPhoto'
 import { ConfirmDialog } from './ConfirmDialog'
 
 export function CoverPhoto({ pet, editable = true }: { pet: Pet; editable?: boolean }) {
@@ -10,7 +10,7 @@ export function CoverPhoto({ pet, editable = true }: { pet: Pet; editable?: bool
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [confirmRemove, setConfirmRemove] = useState(false)
-  const src = coverPhotoUrl(pet)
+  const src = useCoverSrc(pet)
 
   async function onPick(file: File | undefined) {
     if (!file) return
@@ -22,9 +22,23 @@ export function CoverPhoto({ pet, editable = true }: { pet: Pet; editable?: bool
     setError('')
     try {
       const bytes = await compressCover(file)
-      await putGitHubBytes(coverPhotoPath(pet.id), bytes, `Update cover photo for ${pet.name}`)
-      await db.pets.update(pet.id, { coverAt: new Date().toISOString() })
+      setLocalCoverPreview(pet.id, bytes)
+      const stamp = String(Date.now())
+      await putGitHubBytes(coverPhotoPath(pet.id, stamp), bytes, `Update cover photo for ${pet.name}`)
+      if (pet.coverAt) {
+        const previous = coverPhotoPath(pet.id, pet.coverAt)
+        const next = coverPhotoPath(pet.id, stamp)
+        if (previous !== next) {
+          try {
+            await deleteGitHubFile(previous, `Replace cover photo for ${pet.name}`)
+          } catch {
+            /* old file may already be gone */
+          }
+        }
+      }
+      await db.pets.update(pet.id, { coverAt: stamp })
     } catch (err) {
+      setLocalCoverPreview(pet.id, null)
       setError(err instanceof Error ? err.message : 'Could not save this photo.')
     } finally {
       setBusy(false)
@@ -37,9 +51,10 @@ export function CoverPhoto({ pet, editable = true }: { pet: Pet; editable?: bool
     setBusy(true)
     setError('')
     try {
-      if (isGitHubConnected()) {
-        await deleteGitHubFile(coverPhotoPath(pet.id), `Remove cover photo for ${pet.name}`)
+      if (isGitHubConnected() && pet.coverAt) {
+        await deleteGitHubFile(coverPhotoPath(pet.id, pet.coverAt), `Remove cover photo for ${pet.name}`)
       }
+      setLocalCoverPreview(pet.id, null)
       await db.pets.update(pet.id, { coverAt: '' })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not remove this photo.')
@@ -52,7 +67,7 @@ export function CoverPhoto({ pet, editable = true }: { pet: Pet; editable?: bool
     if (!src) return null
     return (
       <div className="cover-photo">
-        <img className="cover-photo-img" src={src} alt={`${pet.name} cover`} />
+        <img key={src} className="cover-photo-img" src={src} alt={`${pet.name} cover`} />
       </div>
     )
   }
@@ -60,7 +75,7 @@ export function CoverPhoto({ pet, editable = true }: { pet: Pet; editable?: bool
   return (
     <div className="cover-photo">
       {src ? (
-        <img className="cover-photo-img" src={src} alt={`${pet.name} cover`} />
+        <img key={src} className="cover-photo-img" src={src} alt={`${pet.name} cover`} />
       ) : (
         <div className="cover-photo-img placeholder" aria-hidden>
           No photo
@@ -103,7 +118,7 @@ export function CoverPhoto({ pet, editable = true }: { pet: Pet; editable?: bool
 }
 
 export function CoverThumb({ pet }: { pet: Pet }) {
-  const src = coverPhotoUrl(pet)
+  const src = useCoverSrc(pet)
   if (!src) return <div className="cover-thumb placeholder" aria-hidden />
-  return <img className="cover-thumb" src={src} alt="" />
+  return <img key={src} className="cover-thumb" src={src} alt="" />
 }

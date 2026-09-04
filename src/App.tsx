@@ -39,7 +39,7 @@ function go(path: string) {
 async function deletePetAndCover(pet: Pet) {
   if (isGitHubConnected() && pet.coverAt) {
     try {
-      await deleteGitHubFile(coverPhotoPath(pet.id), `Remove cover photo for ${pet.name}`)
+      await deleteGitHubFile(coverPhotoPath(pet.id, pet.coverAt), `Remove cover photo for ${pet.name}`)
     } catch {
       /* still delete the pet if the photo file is already gone */
     }

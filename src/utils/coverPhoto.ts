@@ -1,7 +1,43 @@
+import { useSyncExternalStore } from 'react'
 import { getGitHubSettings, guessGitHubRepo } from '../github'
 import type { Pet } from '../types'
 
-export function coverPhotoPath(petId: string): string {
+const localCoverUrls = new Map<string, string>()
+const localCoverListeners = new Set<() => void>()
+let localCoverVersion = 0
+
+function emitLocalCovers() {
+  localCoverVersion += 1
+  for (const listener of localCoverListeners) listener()
+}
+
+function subscribeLocalCovers(listener: () => void) {
+  localCoverListeners.add(listener)
+  return () => {
+    localCoverListeners.delete(listener)
+  }
+}
+
+function localCoverVersionSnapshot() {
+  return localCoverVersion
+}
+
+export function setLocalCoverPreview(petId: string, bytes: Uint8Array | null) {
+  const previous = localCoverUrls.get(petId)
+  if (previous) URL.revokeObjectURL(previous)
+  if (!bytes) {
+    localCoverUrls.delete(petId)
+    emitLocalCovers()
+    return
+  }
+  const copy = new Uint8Array(bytes.byteLength)
+  copy.set(bytes)
+  localCoverUrls.set(petId, URL.createObjectURL(new Blob([copy], { type: 'image/jpeg' })))
+  emitLocalCovers()
+}
+
+export function coverPhotoPath(petId: string, coverAt?: string): string {
+  if (coverAt && /^\d+$/.test(coverAt)) return `pet-photos/${petId}-${coverAt}.jpg`
   return `pet-photos/${petId}.jpg`
 }
 
@@ -12,12 +48,17 @@ export function coverPhotoUrl(pet: Pet): string | null {
   const o = owner || guessed?.owner
   const r = repo || guessed?.repo
   if (!o || !r) return null
-  const stamp = encodeURIComponent(pet.coverAt)
+  const file = coverPhotoPath(pet.id, pet.coverAt)
   if (window.location.hostname.endsWith('.github.io')) {
     const folder = window.location.pathname.replace(/\/index\.html$/i, '').replace(/\/$/, '')
-    return `${window.location.origin}${folder}/pet-photos/${pet.id}.jpg?t=${stamp}`
+    return `${window.location.origin}${folder}/${file}`
   }
-  return `https://raw.githubusercontent.com/${o}/${r}/main/pet-photos/${pet.id}.jpg?t=${stamp}`
+  return `https://raw.githubusercontent.com/${o}/${r}/main/${file}`
+}
+
+export function useCoverSrc(pet: Pet): string | null {
+  useSyncExternalStore(subscribeLocalCovers, localCoverVersionSnapshot, localCoverVersionSnapshot)
+  return localCoverUrls.get(pet.id) ?? coverPhotoUrl(pet)
 }
 
 export async function compressCover(file: File): Promise<Uint8Array> {
