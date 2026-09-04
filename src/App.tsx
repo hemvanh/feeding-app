@@ -131,23 +131,21 @@ function HomePage() {
         <div className="pet-grid">
           {cards.map(({ pet, schedule, status, fedToday, cycles }) => (
             <article key={pet.id} className={`pet-card status-${fedToday ? 'fed-today' : status}`}>
-              <button type="button" className="pet-card-hit" onClick={() => go(`/pet/${pet.id}`)}>
-                <div className="pet-card-head">
-                  <div className="pet-card-titles">
-                    <h2>{pet.name}</h2>
-                    <p className="pet-species">{pet.species}</p>
-                    <p className="pet-morphs">
-                      {pet.morphs.length ? pet.morphs.join(' / ') : '\u00a0'}
-                    </p>
-                  </div>
-                  <span className={`badge ${fedToday ? 'fed-today' : status}`}>
-                    {fedToday ? 'Fed today' : dueLabel(schedule.nextDueDate)}
-                  </span>
+              <div className="pet-card-head">
+                <div className="pet-card-titles">
+                  <h2>{pet.name}</h2>
+                  <p className="pet-species">{pet.species}</p>
+                  <p className="pet-morphs">
+                    {pet.morphs.length ? pet.morphs.join(' / ') : '\u00a0'}
+                  </p>
                 </div>
-              </button>
+                <span className={`badge ${fedToday ? 'fed-today' : status}`}>
+                  {fedToday ? 'Fed today' : dueLabel(schedule.nextDueDate)}
+                </span>
+              </div>
               <MiniCalendar cycles={cycles} nextDueDate={schedule.nextDueDate} />
               <div className="pet-card-actions">
-                <button type="button" className="ghost-btn" onClick={() => go(`/pet/${pet.id}`)}>
+                <button type="button" className="primary-btn compact" onClick={() => go(`/pet/${pet.id}`)}>
                   Record feeding
                 </button>
                 <span className="muted small">Every {pet.feedingPeriodDays} days</span>
