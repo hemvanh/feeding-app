@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-04T16:00:19.224Z",
+  "updatedAt": "2026-09-04T16:01:14.508Z",
   "pets": [
     {
       "id": "21f1c20a-7825-4752-8c5a-d920c4658d50",
@@ -55,7 +55,8 @@
         "Albino (Purple Phase)"
       ],
       "feedingPeriodDays": 7,
-      "createdAt": "2026-09-04T10:40:21.498Z"
+      "createdAt": "2026-09-04T10:40:21.498Z",
+      "coverAt": "1788537671238"
     },
     {
       "id": "c46785d7-af1b-4305-aee7-611a3a675fbc",
