@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react'
 import { ConfirmDialog } from './components/ConfirmDialog'
 import { ExtendForm, FeedingForm } from './components/FeedingForm'
 import { MiniCalendar } from './components/MiniCalendar'
@@ -42,7 +42,7 @@ function AppShell({
   children,
   back,
 }: {
-  title: string
+  title?: string
   children: ReactNode
   back?: string
 }) {
@@ -50,13 +50,19 @@ function AppShell({
     <div className="app">
       <header className="topbar">
         {back ? (
-          <button type="button" className="text-btn" onClick={() => go(back)}>
+          <button type="button" className="back-btn" onClick={() => go(back)}>
             Back
           </button>
         ) : (
-          <span className="brand">Reptile Feed</span>
+          <span className="brand" aria-label="Reptile Feed">
+            {Array.from('Reptile Feed').map((ch, i) => (
+              <span key={i} className="brand-letter" style={{ '--i': i } as CSSProperties}>
+                {ch === ' ' ? '\u00a0' : ch}
+              </span>
+            ))}
+          </span>
         )}
-        <h1>{title}</h1>
+        {title ? <h1>{title}</h1> : <span className="topbar-center" />}
         {back ? (
           <span className="spacer" />
         ) : (
@@ -107,7 +113,7 @@ function HomePage() {
   }, [events, filter, pets])
 
   return (
-    <AppShell title="Feeding calendar">
+    <AppShell>
       <label className="search-field">
         <span className="sr-only">Search pets</span>
         <input

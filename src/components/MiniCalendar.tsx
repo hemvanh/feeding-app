@@ -103,6 +103,26 @@ export function MiniCalendar({
               : { background: tint.color, color: '#fff' }
             : undefined
 
+          const day = parseISO(iso).getDate()
+          const inner = (
+            <>
+              {isToday ? (
+                <svg className="today-train" aria-hidden="true">
+                  <rect
+                    x="1.5"
+                    y="1.5"
+                    width="calc(100% - 3px)"
+                    height="calc(100% - 3px)"
+                    rx="8.5"
+                    ry="8.5"
+                    pathLength="100"
+                  />
+                </svg>
+              ) : null}
+              <span className="day-num">{day}</span>
+            </>
+          )
+
           if (onSelectDate) {
             return (
               <button
@@ -113,19 +133,14 @@ export function MiniCalendar({
                 title={title}
                 onClick={() => onSelectDate(iso)}
               >
-                {parseISO(iso).getDate()}
+                {inner}
               </button>
             )
           }
 
           return (
-            <div
-              key={iso}
-              className={classes}
-              style={style}
-              title={title}
-            >
-              {parseISO(iso).getDate()}
+            <div key={iso} className={classes} style={style} title={title}>
+              {inner}
             </div>
           )
         })}

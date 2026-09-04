@@ -46,11 +46,49 @@ button, input, select, textarea {
   margin: 0;
   font-size: clamp(1.15rem, 3vw, 1.6rem);
   text-align: center;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .brand {
-  font-weight: 700;
-  color: var(--green-2);
+  display: flex;
+  align-items: baseline;
+  justify-self: start;
+  white-space: nowrap;
+  font-family: Chewy, "Segoe UI", sans-serif;
+  font-size: 1.72rem;
+  font-weight: 400;
+  letter-spacing: 0.03em;
+  line-height: 1;
+  animation: brand-glow 2.4s ease-in-out infinite;
+}
+
+.brand-letter {
+  display: inline-block;
+  transform-origin: 50% 80%;
+  background: linear-gradient(180deg, #7a1810 0%, #1d5c34 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: brand-slither 1.7s ease-in-out infinite;
+  animation-delay: calc(var(--i) * 90ms);
+}
+
+@keyframes brand-slither {
+  0%, 100% { transform: translateY(0) rotate(0deg) scale(1); }
+  35% { transform: translateY(-8px) rotate(-12deg) scale(1.08); }
+  65% { transform: translateY(4px) rotate(10deg) scale(0.96); }
+}
+
+@keyframes brand-glow {
+  0%, 100% { filter: drop-shadow(0 0 4px rgba(122, 24, 16, 0.35)); }
+  50% { filter: drop-shadow(0 0 16px rgba(29, 92, 52, 0.85)) drop-shadow(0 0 8px rgba(122, 24, 16, 0.55)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brand, .brand-letter, .today-train rect { animation: none; }
 }
 
 .spacer { width: 52px; }
@@ -226,7 +264,7 @@ input, select, textarea {
   font-size: 0.86rem;
 }
 
-.primary-btn, .ghost-btn, .danger-btn, .text-btn, .icon-btn {
+.primary-btn, .ghost-btn, .danger-btn, .text-btn, .icon-btn, .back-btn {
   border: 0;
   cursor: pointer;
   border-radius: 999px;
@@ -239,7 +277,17 @@ input, select, textarea {
   font-weight: 650;
 }
 
-.primary-btn.compact { padding: 8px 12px; font-size: 0.92rem; }
+.primary-btn.compact, .back-btn {
+  padding: 8px 12px;
+  font-size: 0.92rem;
+  font-weight: 650;
+}
+.back-btn {
+  background: #8a6408;
+  color: #fff;
+  width: max-content;
+  justify-self: start;
+}
 .ghost-btn, .icon-btn {
   background: #eef6ea;
   padding: 8px 12px;
@@ -296,12 +344,35 @@ input, select, textarea {
   display: grid;
   place-items: center;
   background: #f3f6f0;
+  position: relative;
 }
 .calendar-cell.is-today {
-  outline: 3px dashed #ffd24a;
-  outline-offset: -3px;
+  outline: none;
   box-shadow: 0 0 0 2px rgba(17, 24, 17, 0.55), 0 0 10px rgba(255, 210, 74, 0.7);
   font-weight: 800;
+}
+.today-train {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+}
+.today-train rect {
+  fill: none;
+  stroke: #ffd24a;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-dasharray: 7 6;
+  animation: today-train 0.55s linear infinite;
+}
+@keyframes today-train {
+  to { stroke-dashoffset: -13; }
+}
+.calendar-cell .day-num {
+  position: relative;
+  z-index: 1;
 }
 .calendar-cell.is-fed {
   font-weight: 800;
@@ -313,8 +384,7 @@ input, select, textarea {
   box-shadow: 0 0 0 3px #3b9eff;
 }
 .calendar-cell.is-today.is-selected {
-  outline: 3px dashed #ffd24a;
-  outline-offset: -4px;
+  outline: none;
   box-shadow: 0 0 0 3px #3b9eff, 0 0 10px rgba(255, 210, 74, 0.7);
 }
 button.calendar-cell {
@@ -485,10 +555,8 @@ button.calendar-cell {
 
 @media (max-width: 640px) {
   .app { padding: 12px 12px 28px; }
-  .topbar { grid-template-columns: 1fr auto; }
-  .topbar h1 { grid-column: 1 / -1; order: 3; text-align: left; }
   .calendar-cell { min-height: 40px; }
-  input, select, textarea, .primary-btn, .ghost-btn, .danger-btn {
+  input, select, textarea, .primary-btn, .ghost-btn, .danger-btn, .back-btn {
     min-height: 44px;
   }
 }
