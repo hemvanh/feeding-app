@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-04T11:40:21.783Z",
+  "updatedAt": "2026-09-04T11:40:32.995Z",
   "pets": [
     {
       "id": "21f1c20a-7825-4752-8c5a-d920c4658d50",
@@ -78,6 +78,15 @@
     }
   ],
   "feedings": [
+    {
+      "id": "0cc7e893-493d-44cb-a7d0-2d09180cc263",
+      "petId": "c46785d7-af1b-4305-aee7-611a3a675fbc",
+      "date": "2026-09-04",
+      "note": "",
+      "outcome": "fed",
+      "extensionDays": 0,
+      "createdAt": "2026-09-04T11:40:32.732Z"
+    },
     {
       "id": "2d566a85-e76a-4254-91c5-7b5034e985af",
       "petId": "d666bfbb-c60f-45ed-a81a-c98780644532",
