@@ -1,14 +1,14 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-04T14:37:10.006Z",
+  "updatedAt": "2026-09-04T14:41:48.515Z",
   "pets": [
     {
       "id": "21f1c20a-7825-4752-8c5a-d920c4658d50",
       "name": "Hog Conda Albino",
       "species": "Hognose Snake",
       "morphs": [
-        "Anaconda / Conda",
-        "Albino"
+        "Albino",
+        "Conda"
       ],
       "feedingPeriodDays": 4,
       "createdAt": "2026-09-03T19:26:54.800Z"
