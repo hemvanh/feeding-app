@@ -246,6 +246,28 @@ main {
   align-items: center;
   gap: 10px 14px;
 }
+.cover-photo-pick {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.cover-photo-pick.is-busy {
+  pointer-events: none;
+  opacity: 0.65;
+}
+.cover-photo-file {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  opacity: 0;
+  cursor: pointer;
+  font-size: 100px;
+}
 .cover-photo-actions .field-hint {
   flex: 1 1 100%;
 }

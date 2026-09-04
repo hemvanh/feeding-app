@@ -67,27 +67,26 @@ export function CoverPhoto({ pet, editable = true }: { pet: Pet; editable?: bool
         </div>
       )}
       <div className="cover-photo-actions">
-        <input
-          ref={input}
-          className="sr-only"
-          type="file"
-          accept="image/*"
-          onChange={(event) => void onPick(event.target.files?.[0])}
-        />
-        <button
-          type="button"
-          className="ghost-btn"
-          disabled={busy}
-          onClick={() => input.current?.click()}
-        >
+        <label className={`ghost-btn cover-photo-pick${busy ? ' is-busy' : ''}`}>
+          <input
+            ref={input}
+            className="cover-photo-file"
+            type="file"
+            accept="image/jpeg,image/png,image/heic,image/heif,image/webp,image/*"
+            disabled={busy}
+            onChange={(event) => void onPick(event.target.files?.[0])}
+          />
           {busy ? 'Saving…' : src ? 'Change photo' : 'Add from Photos'}
-        </button>
+        </label>
         {src ? (
           <button type="button" className="text-btn" disabled={busy} onClick={() => setConfirmRemove(true)}>
             Remove
           </button>
         ) : null}
-        <span className="field-hint">Opens the iPhone Photos picker (or camera / files on this device).</span>
+        <span className="field-hint">
+          iPhone will not grant this app Photos access in Settings — that is normal, and you will not get a
+          privacy prompt. Pick the photo in the sheet (Photo Library or Browse).
+        </span>
       </div>
       {error ? <p className="error">{error}</p> : null}
       {confirmRemove ? (
