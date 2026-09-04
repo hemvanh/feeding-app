@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-04T10:31:08.760Z",
+  "updatedAt": "2026-09-04T10:38:24.584Z",
   "pets": [
     {
       "id": "21f1c20a-7825-4752-8c5a-d920c4658d50",
@@ -12,6 +12,16 @@
       ],
       "feedingPeriodDays": 4,
       "createdAt": "2026-09-03T19:26:54.800Z"
+    },
+    {
+      "id": "3d3a958e-8ca6-442a-81d6-2cb317d96581",
+      "name": "King Cali. Mosaic",
+      "species": "King Snake",
+      "morphs": [
+        "Mosaic"
+      ],
+      "feedingPeriodDays": 5,
+      "createdAt": "2026-09-04T10:38:24.327Z"
     },
     {
       "id": "732d4167-464c-4698-89ea-6a7d61f79647",
