@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-04T08:24:49.298Z",
+  "updatedAt": "2026-09-04T10:31:08.760Z",
   "pets": [
     {
       "id": "21f1c20a-7825-4752-8c5a-d920c4658d50",
@@ -25,12 +25,12 @@
     },
     {
       "id": "c46785d7-af1b-4305-aee7-611a3a675fbc",
-      "name": "Gấm GC Tiger",
+      "name": "Gấm GC Sunfire Alb.",
       "species": "Reticulated Python",
       "morphs": [
         "Golden Child",
-        "Tiger",
-        "Albino"
+        "Lavender Albino",
+        "Sunfire"
       ],
       "feedingPeriodDays": 7,
       "createdAt": "2026-09-03T18:59:26.881Z"
