@@ -1,18 +1,22 @@
 import { useState, type FormEvent } from 'react'
-import { SPECIES, type Pet, type Species } from '../types'
+import { FEEDER_TYPES, SPECIES, type Pet, type Species } from '../types'
 import { ConfirmDialog } from './ConfirmDialog'
 import { MorphPicker } from './MorphPicker'
+
+type PetFields = {
+  name: string
+  species: Species
+  morphs: string[]
+  feedingPeriodDays: number
+  feederType: string
+  feederWeightGrams: number
+}
 
 type PetFormProps = {
   initial?: Pet
   submitLabel: string
   confirmSave?: boolean
-  onSubmit: (data: {
-    name: string
-    species: Species
-    morphs: string[]
-    feedingPeriodDays: number
-  }) => Promise<void> | void
+  onSubmit: (data: PetFields) => Promise<void> | void
 }
 
 export function PetForm({ initial, submitLabel, confirmSave = false, onSubmit }: PetFormProps) {
@@ -20,17 +24,18 @@ export function PetForm({ initial, submitLabel, confirmSave = false, onSubmit }:
   const [species, setSpecies] = useState<Species>(initial?.species ?? 'Ball Python')
   const [morphs, setMorphs] = useState<string[]>(initial?.morphs ?? [])
   const [period, setPeriod] = useState(String(initial?.feedingPeriodDays ?? 7))
+  const [feederType, setFeederType] = useState(initial?.feederType ?? '')
+  const [weight, setWeight] = useState(
+    initial?.feederWeightGrams && initial.feederWeightGrams > 0 ? String(initial.feederWeightGrams) : '',
+  )
   const [error, setError] = useState('')
-  const [pending, setPending] = useState<{
-    name: string
-    species: Species
-    morphs: string[]
-    feedingPeriodDays: number
-  } | null>(null)
+  const [pending, setPending] = useState<PetFields | null>(null)
 
   function parsedForm() {
     const trimmed = name.trim()
     const days = Number(period)
+    const grams = Number(weight)
+    const feeder = feederType.trim()
     if (!trimmed) {
       setError('Give this pet a name.')
       return null
@@ -39,12 +44,22 @@ export function PetForm({ initial, submitLabel, confirmSave = false, onSubmit }:
       setError('Feeding period must be between 1 and 365 days.')
       return null
     }
+    if (!feeder) {
+      setError('Choose a feeder type, or type a custom one.')
+      return null
+    }
+    if (!Number.isFinite(grams) || grams < 1 || grams > 100000) {
+      setError('Weight must be at least 1 gram.')
+      return null
+    }
     setError('')
     return {
       name: trimmed,
       species,
       morphs,
       feedingPeriodDays: Math.round(days),
+      feederType: feeder,
+      feederWeightGrams: Math.round(grams),
     }
   }
 
@@ -105,6 +120,43 @@ export function PetForm({ initial, submitLabel, confirmSave = false, onSubmit }:
         <span className="field-hint">
           If this is 5, the next feeding is due 5 days after a successful feed.
         </span>
+      </label>
+      <fieldset className="feeder-fieldset">
+        <legend>Feeder type</legend>
+        <div className="choice-row feeder-choices">
+          {FEEDER_TYPES.map((type) => (
+            <label key={type} className={`choice${feederType === type ? ' on' : ''}`}>
+              <input
+                type="radio"
+                name="feeder-type"
+                checked={feederType === type}
+                onChange={() => setFeederType(type)}
+              />
+              {type}
+            </label>
+          ))}
+          <input
+            className="feeder-custom"
+            value={(FEEDER_TYPES as readonly string[]).includes(feederType) ? '' : feederType}
+            onChange={(e) => setFeederType(e.target.value)}
+            placeholder="Custom feeder"
+            aria-label="Custom feeder"
+          />
+        </div>
+        <span className="field-hint">Pick Mouse, Rat, or Chicken, or type any other feeder.</span>
+      </fieldset>
+      <label>
+        Weight (grams)
+        <input
+          type="number"
+          min={1}
+          max={100000}
+          step={1}
+          inputMode="numeric"
+          value={weight}
+          onChange={(e) => setWeight(e.target.value)}
+          placeholder="e.g. 15"
+        />
       </label>
       {error ? <p className="error">{error}</p> : null}
       <button type="submit" className="primary-btn">

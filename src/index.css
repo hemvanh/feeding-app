@@ -337,7 +337,24 @@ label, fieldset {
   margin: 0;
 }
 
-legend { font-weight: 650; padding: 0; }
+legend {
+  font-weight: 650;
+  padding: 0;
+  margin: 0 0 10px;
+}
+
+.feeder-fieldset {
+  gap: 10px;
+}
+.feeder-choices {
+  align-items: center;
+}
+.feeder-custom {
+  width: auto;
+  flex: 1;
+  min-width: 8rem;
+  padding: 6px 10px;
+}
 
 input, select, textarea {
   width: 100%;
@@ -605,6 +622,28 @@ button.calendar-cell {
 .pet-hero { display: grid; gap: 8px; }
 .search-field input { margin-bottom: 4px; }
 
+.feeder-prep {
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px;
+}
+.feeder-prep h2 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+.feeder-prep-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.feeder-prep-chip {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: #eef6ea;
+  font-weight: 650;
+}
+
 .sr-only {
   position: absolute;
   width: 1px;
@@ -665,7 +704,7 @@ button.calendar-cell {
     --line: #2c3a2d;
     --shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
   }
-  input, select, textarea, .chip, .morph-option, .choice {
+  input, select, textarea, .chip, .morph-option, .choice, .feeder-prep-chip {
     background: #121812;
     border-color: #334236;
     color: var(--ink);

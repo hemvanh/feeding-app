@@ -8,7 +8,7 @@ import { SyncBar } from './components/SyncBar'
 import { db, newId } from './db'
 import { deleteGitHubFile, isGitHubConnected } from './github'
 import { useAllFeedings, useFeedings, usePet, usePets } from './hooks/useDb'
-import type { FeedingEvent, FeedingOutcome, Pet } from './types'
+import { feederPrepLabel, feederPrepLines, feederSummary, type FeedingEvent, type FeedingOutcome, type Pet } from './types'
 import { coverPhotoPath } from './utils/coverPhoto'
 import { formatPretty, todayISO } from './utils/dates'
 import { computeSchedule, dueLabel, dueStatus, buildCycles, wasFedToday } from './utils/schedule'
@@ -131,6 +131,19 @@ function HomePage() {
       })
   }, [events, filter, pets])
 
+  const prepLines = useMemo(() => {
+    if (!pets || !events) return []
+    return feederPrepLines(
+      pets.filter((pet) => {
+        const petEvents = events.filter((event) => event.petId === pet.id)
+        const schedule = computeSchedule(pet, petEvents)
+        if (wasFedToday(schedule.lastFedDate)) return false
+        const status = dueStatus(schedule.nextDueDate)
+        return status === 'overdue' || status === 'today'
+      }),
+    )
+  }, [events, pets])
+
   return (
     <AppShell>
       <label className="search-field">
@@ -141,6 +154,22 @@ function HomePage() {
           placeholder="Search name, species, morph"
         />
       </label>
+      {pets && pets.length > 0 ? (
+        <section className="panel feeder-prep" aria-label="Feeders to prepare">
+          <h2>Prepare for overdue and due today</h2>
+          {prepLines.length === 0 ? (
+            <p className="muted">Nothing to thaw right now.</p>
+          ) : (
+            <div className="feeder-prep-chips">
+              {prepLines.map((line) => (
+                <span key={`${line.type}-${line.grams ?? 'none'}`} className="feeder-prep-chip">
+                  {feederPrepLabel(line)}
+                </span>
+              ))}
+            </div>
+          )}
+        </section>
+      ) : null}
       {pets === undefined || events === undefined ? (
         <section className="empty">
           <p className="muted">Loading pets…</p>
@@ -193,7 +222,10 @@ function HomePage() {
                 <button type="button" className="primary-btn compact" onClick={() => go(`/pet/${pet.id}`)}>
                   Record feeding
                 </button>
-                <span className="muted small">Every {pet.feedingPeriodDays} days</span>
+                <span className="muted small">
+                  Every {pet.feedingPeriodDays} days
+                  {feederSummary(pet) ? ` · ${feederSummary(pet)}` : ''}
+                </span>
               </div>
             </article>
           ))}
@@ -330,6 +362,7 @@ function PetPage({ id }: { id: string }) {
         <span className={`badge ${status}`}>{dueLabel(schedule.nextDueDate)}</span>
         <p>
           Feeding period: every <strong>{pet.feedingPeriodDays}</strong> days
+          {feederSummary(pet) ? ` · ${feederSummary(pet)}` : ''}
           {schedule.lastFedDate ? ` · Last ate ${formatPretty(schedule.lastFedDate)}` : ''}
           {schedule.nextDueDate ? ` · Next ${formatPretty(schedule.nextDueDate)}` : ''}
         </p>

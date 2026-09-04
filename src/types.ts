@@ -23,12 +23,18 @@ export const FEEDING_OUTCOMES = [
 
 export type FeedingOutcome = (typeof FEEDING_OUTCOMES)[number]
 
+export const FEEDER_TYPES = ['Mouse', 'Rat', 'Chicken'] as const
+
+export type FeederTypePreset = (typeof FEEDER_TYPES)[number]
+
 export type Pet = {
   id: string
   name: string
   species: Species
   morphs: string[]
   feedingPeriodDays: number
+  feederType?: string
+  feederWeightGrams?: number
   createdAt: string
   coverAt?: string
 }
@@ -41,6 +47,51 @@ export type FeedingEvent = {
   outcome: FeedingOutcome
   extensionDays: number
   createdAt: string
+}
+
+export function feederSummary(pet: Pick<Pet, 'feederType' | 'feederWeightGrams'>): string {
+  const type = pet.feederType?.trim() ?? ''
+  const grams = pet.feederWeightGrams
+  const hasWeight = typeof grams === 'number' && grams > 0
+  if (type && hasWeight) return `${type} · ${grams}g`
+  if (type) return type
+  if (hasWeight) return `${grams}g`
+  return ''
+}
+
+export type FeederPrepLine = {
+  type: string
+  grams: number | null
+  count: number
+}
+
+export function feederPrepLines(pets: Pet[]): FeederPrepLine[] {
+  const buckets = new Map<string, FeederPrepLine>()
+  for (const pet of pets) {
+    const type = pet.feederType?.trim() || 'Unspecified'
+    const grams = typeof pet.feederWeightGrams === 'number' && pet.feederWeightGrams > 0 ? pet.feederWeightGrams : null
+    const key = `${type.toLowerCase()}|${grams ?? 'none'}`
+    const current = buckets.get(key)
+    if (current) current.count += 1
+    else buckets.set(key, { type, grams, count: 1 })
+  }
+  const rankOf = (type: string) => {
+    const index = FEEDER_TYPES.findIndex((item) => item.toLowerCase() === type.toLowerCase())
+    if (index >= 0) return index
+    if (type === 'Unspecified') return 999
+    return 50
+  }
+  return [...buckets.values()].sort((a, b) => {
+    const rank = rankOf(a.type) - rankOf(b.type)
+    if (rank !== 0) return rank
+    if (a.type !== b.type) return a.type.localeCompare(b.type)
+    return (a.grams ?? 0) - (b.grams ?? 0)
+  })
+}
+
+export function feederPrepLabel(line: FeederPrepLine): string {
+  const weight = line.grams != null ? ` ${line.grams}g` : ''
+  return `${line.count} × ${line.type}${weight}`
 }
 
 export type PetSchedule = {
