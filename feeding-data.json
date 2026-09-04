@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-04T11:55:57.198Z",
+  "updatedAt": "2026-09-04T14:37:10.006Z",
   "pets": [
     {
       "id": "21f1c20a-7825-4752-8c5a-d920c4658d50",
@@ -64,7 +64,8 @@
         "Sunfire"
       ],
       "feedingPeriodDays": 7,
-      "createdAt": "2026-09-03T18:59:26.881Z"
+      "createdAt": "2026-09-03T18:59:26.881Z",
+      "coverAt": "2026-09-04T14:37:09.750Z"
     },
     {
       "id": "d666bfbb-c60f-45ed-a81a-c98780644532",
