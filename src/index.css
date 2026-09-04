@@ -372,7 +372,7 @@ button.calendar-cell {
   background: transparent;
 }
 
-.chips, .morph-list, .choice-row, .row-actions, .tabs {
+.chips, .choice-row, .row-actions, .tabs {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
@@ -385,6 +385,7 @@ button.calendar-cell {
   border-radius: 999px;
   padding: 6px 10px;
   cursor: pointer;
+  flex: 0 0 auto;
 }
 
 .choice.on {
@@ -393,8 +394,26 @@ button.calendar-cell {
   border-color: var(--green-2);
 }
 .choice input { display: none; }
-.morph-list { max-height: 180px; overflow: auto; }
-.morph-option { background: #f3f6f0; }
+.morph-picker {
+  display: grid;
+  gap: 12px;
+}
+.morph-list {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  column-gap: 8px;
+  row-gap: 8px;
+  max-height: 180px;
+  overflow: auto;
+  padding: 4px 2px 8px;
+  margin-top: 2px;
+}
+.morph-option {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  background: #f3f6f0;
+}
 .morph-search { display: grid; gap: 8px; }
 
 .tabs button {
