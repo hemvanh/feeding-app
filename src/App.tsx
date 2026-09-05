@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react'
 import { CoverPhoto, CoverThumb } from './components/CoverPhoto'
 import { ConfirmDialog } from './components/ConfirmDialog'
-import { PetQrCode } from './components/PetQrCode'
+import { PetQrCode, PrintQrSticker } from './components/PetQrCode'
 import { QrScanner } from './components/QrScanner'
 import { ExtendForm, FeedingForm } from './components/FeedingForm'
 import { MiniCalendar } from './components/MiniCalendar'
@@ -13,6 +13,7 @@ import { useAllFeedings, useFeedings, usePet, usePets } from './hooks/useDb'
 import { feederPrepLabel, feederPrepLines, feederSummary, type FeedingEvent, type FeedingOutcome, type Pet } from './types'
 import { coverPhotoPath } from './utils/coverPhoto'
 import { petIdFromQrText } from './utils/petQr'
+import { openPetQrPrintSheet } from './utils/qrPrintSheet'
 import { formatPretty, todayISO } from './utils/dates'
 import { computeSchedule, dueLabel, dueStatus, buildCycles, wasFedToday } from './utils/schedule'
 
@@ -21,10 +22,12 @@ type Route =
   | { name: 'new' }
   | { name: 'pet'; id: string }
   | { name: 'edit'; id: string; back: string }
+  | { name: 'print-qrs' }
 
 function parseHash(): Route {
   const hash = window.location.hash.replace(/^#/, '') || '/'
   if (hash === '/new') return { name: 'new' }
+  if (hash === '/print-qrs') return { name: 'print-qrs' }
   const edit = hash.match(/^\/pet\/([^/?]+)\/edit(?:\?(.*))?$/)
   if (edit) {
     const fromHome = new URLSearchParams(edit[2] ?? '').get('from') === 'home'
@@ -64,11 +67,13 @@ function AppShell({
   children,
   back,
   onScan,
+  onPrintQrs,
 }: {
   title?: string
   children: ReactNode
   back?: string
   onScan?: () => void
+  onPrintQrs?: () => void
 }) {
   return (
     <div className="app">
@@ -103,6 +108,26 @@ function AppShell({
                     d="M7 3H4v3M17 3h3v3M7 21H4v-3M20 18v3h-3"
                   />
                   <path fill="currentColor" d="M6 6h5v5H6V6Zm1.5 1.5v2h2v-2h-2Zm5.5-1.5h5v5h-5V6Zm1.5 1.5v2h2v-2h-2ZM6 13h5v5H6v-5Zm1.5 1.5v2h2v-2h-2ZM13 13h2v2h-2v-2Zm3 0h2v2h-2v-2Zm-3 3h2v2h-2v-2Zm3 0h2v2h-2v-2Z" />
+                </svg>
+              </button>
+            ) : null}
+            {onPrintQrs ? (
+              <button
+                type="button"
+                className="primary-btn compact scan-btn"
+                aria-label="Print all pet QR codes"
+                onClick={onPrintQrs}
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M6 9V4h12v5M6 18H4a1 1 0 0 1-1-1v-6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6a1 1 0 0 1-1 1h-2"
+                  />
+                  <path fill="none" stroke="currentColor" strokeWidth="2" d="M6 14h12v6H6z" />
                 </svg>
               </button>
             ) : null}
@@ -189,6 +214,7 @@ function HomePage() {
         setScanError('')
         setScanning(true)
       }}
+      onPrintQrs={() => openPetQrPrintSheet()}
     >
       <label className="search-field">
         <span className="sr-only">Search pets</span>
@@ -516,6 +542,41 @@ function PetPage({ id }: { id: string }) {
   )
 }
 
+function PrintQrPage() {
+  const pets = usePets()
+  const stickers = useMemo(() => {
+    if (!pets) return []
+    return [...pets].sort((a, b) => {
+      const species = a.species.localeCompare(b.species)
+      if (species !== 0) return species
+      const morphs = (a.morphs.join(' / ') || '—').localeCompare(b.morphs.join(' / ') || '—')
+      if (morphs !== 0) return morphs
+      return a.name.localeCompare(b.name)
+    })
+  }, [pets])
+
+  return (
+    <div className="qr-print-page">
+      <div className="qr-print-toolbar">
+        <button type="button" className="primary-btn compact" onClick={() => window.print()}>
+          Print
+        </button>
+      </div>
+      {pets === undefined ? (
+        <p className="muted">Loading pets…</p>
+      ) : stickers.length === 0 ? (
+        <p className="muted">No pets to print.</p>
+      ) : (
+        <section className="qr-print-sheet">
+          {stickers.map((pet) => (
+            <PrintQrSticker key={pet.id} pet={pet} />
+          ))}
+        </section>
+      )}
+    </div>
+  )
+}
+
 export default function App() {
   const [route, setRoute] = useState<Route>(parseHash)
 
@@ -526,6 +587,7 @@ export default function App() {
     return () => window.removeEventListener('hashchange', onHash)
   }, [])
 
+  if (route.name === 'print-qrs') return <PrintQrPage />
   if (route.name === 'new') return <NewPetPage />
   if (route.name === 'edit') return <EditPetPage id={route.id} back={route.back} />
   if (route.name === 'pet') return <PetPage id={route.id} />
