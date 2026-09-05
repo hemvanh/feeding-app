@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-05T14:35:42.232Z",
+  "updatedAt": "2026-09-05T14:37:25.504Z",
   "pets": [
     {
       "id": "21f1c20a-7825-4752-8c5a-d920c4658d50",
@@ -95,6 +95,18 @@
       "coverAt": "1788537671238",
       "feederType": "Mouse",
       "feederWeightGrams": 50
+    },
+    {
+      "id": "abb47286-0a34-4490-9d1f-e51d7036c327",
+      "name": "Sulcata/Iguana",
+      "species": "Iguana",
+      "morphs": [
+        "High Red"
+      ],
+      "feedingPeriodDays": 2,
+      "feederType": "Grass pellets",
+      "feederWeightGrams": 200,
+      "createdAt": "2026-09-05T14:37:25.248Z"
     },
     {
       "id": "c46785d7-af1b-4305-aee7-611a3a675fbc",
