@@ -877,13 +877,22 @@ button.calendar-cell {
 }
 .qr-print-sheet {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 6mm;
+  grid-template-columns: repeat(4, 3.5cm);
+  gap: 0;
+  width: fit-content;
+  border-top: 1px solid #111;
+  border-left: 1px solid #111;
 }
 .qr-print-sticker {
-  border: 1px solid #c8c8c8;
-  border-radius: 6px;
-  padding: 3mm 2.5mm 2.5mm;
+  box-sizing: border-box;
+  width: 3.5cm;
+  margin: 0;
+  border: 0;
+  border-right: 1px solid #111;
+  border-bottom: 1px solid #111;
+  border-radius: 0;
+  padding: 0 0 2mm;
+  overflow: hidden;
   text-align: center;
   background: #fff;
   color: #111;
@@ -893,27 +902,29 @@ button.calendar-cell {
 .qr-print-sticker .pet-qr-code {
   display: block;
   flex: none;
+  width: 100%;
+  aspect-ratio: 1;
+  height: auto;
   min-height: unset;
 }
 .qr-print-sticker .pet-qr-code svg {
   display: block;
   width: 100%;
-  height: auto;
+  height: 100%;
   max-width: 100%;
-  max-height: none;
+  max-height: 100%;
 }
 .qr-print-sticker .pet-qr-species,
 .qr-print-sticker .pet-qr-morphs {
+  margin: 0;
   color: #111;
+  font-size: 9pt;
+  line-height: 1.2;
+  font-weight: 400;
 }
 .qr-print-sticker .pet-qr-species {
-  margin-top: 2mm;
-  font-size: 13pt;
-  line-height: 1.2;
-}
-.qr-print-sticker .pet-qr-morphs {
-  font-size: 11pt;
-  line-height: 1.25;
+  margin-top: 1.5mm;
+  font-weight: 700;
 }
 
 @page {
@@ -929,7 +940,9 @@ button.calendar-cell {
   .qr-print-toolbar { display: none; }
   .qr-print-page { padding: 0; }
   .qr-print-sheet {
-    grid-template-columns: repeat(4, 1fr);
-    gap: 5mm;
+    grid-template-columns: repeat(4, 3.5cm);
+    gap: 0;
+    border-top: 1px solid #111;
+    border-left: 1px solid #111;
   }
 }
