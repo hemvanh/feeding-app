@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-05T14:31:33.509Z",
+  "updatedAt": "2026-09-05T14:35:42.232Z",
   "pets": [
     {
       "id": "21f1c20a-7825-4752-8c5a-d920c4658d50",
@@ -66,7 +66,8 @@
       "feedingPeriodDays": 5,
       "feederType": "Water Change",
       "feederWeightGrams": 250,
-      "createdAt": "2026-09-05T13:39:28.800Z"
+      "createdAt": "2026-09-05T13:39:28.800Z",
+      "coverAt": "1788618939187"
     },
     {
       "id": "9b599211-8bff-4415-84ed-25a77714e443",
