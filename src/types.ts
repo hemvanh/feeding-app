@@ -10,6 +10,8 @@ export const SPECIES = [
   'Iguana',
   'Pacman Frog',
   'Bull Frog',
+  'Carp Fish',
+  'ComxFlo Snapping',
 ] as const
 
 export type Species = (typeof SPECIES)[number]
@@ -23,9 +25,17 @@ export const FEEDING_OUTCOMES = [
 
 export type FeedingOutcome = (typeof FEEDING_OUTCOMES)[number]
 
-export const FEEDER_TYPES = ['Mouse', 'Rat', 'Chicken'] as const
+export const FEEDER_TYPES = ['Mouse', 'Rat', 'Chicken', 'Water Change'] as const
 
 export type FeederTypePreset = (typeof FEEDER_TYPES)[number]
+
+export function isWaterChange(type: string | undefined): boolean {
+  return (type ?? '').trim().toLowerCase() === 'water change'
+}
+
+export function feederAmountUnit(type: string | undefined): 'L' | 'g' {
+  return isWaterChange(type) ? 'L' : 'g'
+}
 
 export type Pet = {
   id: string
@@ -51,11 +61,12 @@ export type FeedingEvent = {
 
 export function feederSummary(pet: Pick<Pet, 'feederType' | 'feederWeightGrams'>): string {
   const type = pet.feederType?.trim() ?? ''
-  const grams = pet.feederWeightGrams
-  const hasWeight = typeof grams === 'number' && grams > 0
-  if (type && hasWeight) return `${type} · ${grams}g`
+  const amount = pet.feederWeightGrams
+  const hasAmount = typeof amount === 'number' && amount > 0
+  const unit = feederAmountUnit(type)
+  if (type && hasAmount) return `${type} · ${amount}${unit}`
   if (type) return type
-  if (hasWeight) return `${grams}g`
+  if (hasAmount) return `${amount}${unit}`
   return ''
 }
 
@@ -90,8 +101,9 @@ export function feederPrepLines(pets: Pet[]): FeederPrepLine[] {
 }
 
 export function feederPrepLabel(line: FeederPrepLine): string {
-  const weight = line.grams != null ? ` ${line.grams}g` : ''
-  return `${line.count} × ${line.type}${weight}`
+  const unit = feederAmountUnit(line.type)
+  const amount = line.grams != null ? ` ${line.grams}${unit}` : ''
+  return `${line.count} × ${line.type}${amount}`
 }
 
 export type PetSchedule = {

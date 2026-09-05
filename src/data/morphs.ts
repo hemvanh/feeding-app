@@ -532,6 +532,8 @@ export const MORPHS_BY_SPECIES: Record<Species, string[]> = {
     'Melanistic',
     'Patternless',
   ]),
+  'Carp Fish': pack(['Butterfly']),
+  'ComxFlo Snapping': pack([]),
 }
 
 export function morphsFor(species: Species): string[] {

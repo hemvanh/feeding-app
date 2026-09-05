@@ -274,7 +274,7 @@ function HomePage() {
               <MiniCalendar cycles={cycles} nextDueDate={schedule.nextDueDate} />
               <div className="pet-card-actions">
                 <button type="button" className="primary-btn compact" onClick={() => go(`/pet/${pet.id}`)}>
-                  Record feeding
+                  Feed !
                 </button>
                 <span className="muted small">
                   Every {pet.feedingPeriodDays} days
@@ -440,7 +440,7 @@ function PetPage({ id }: { id: string }) {
       <section className="panel">
         <div className="tabs">
           <button type="button" className={tab === 'feed' ? 'on' : ''} onClick={() => setTab('feed')}>
-            Record feeding
+            Feed !
           </button>
           <button type="button" className={tab === 'extend' ? 'on' : ''} onClick={() => setTab('extend')}>
             Extend cycle

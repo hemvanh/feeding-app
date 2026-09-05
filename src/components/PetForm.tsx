@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { FEEDER_TYPES, SPECIES, type Pet, type Species } from '../types'
+import { FEEDER_TYPES, SPECIES, isWaterChange, type Pet, type Species } from '../types'
 import { ConfirmDialog } from './ConfirmDialog'
 import { MorphPicker } from './MorphPicker'
 
@@ -34,8 +34,9 @@ export function PetForm({ initial, submitLabel, confirmSave = false, onSubmit }:
   function parsedForm() {
     const trimmed = name.trim()
     const days = Number(period)
-    const grams = Number(weight)
+    const amount = Number(weight)
     const feeder = feederType.trim()
+    const volume = isWaterChange(feeder)
     if (!trimmed) {
       setError('Give this pet a name.')
       return null
@@ -48,7 +49,12 @@ export function PetForm({ initial, submitLabel, confirmSave = false, onSubmit }:
       setError('Choose a feeder type, or type a custom one.')
       return null
     }
-    if (!Number.isFinite(grams) || grams < 1 || grams > 100000) {
+    if (volume) {
+      if (!Number.isFinite(amount) || amount <= 0 || amount > 100000) {
+        setError('Volume must be greater than 0 liters.')
+        return null
+      }
+    } else if (!Number.isFinite(amount) || amount < 1 || amount > 100000) {
       setError('Weight must be at least 1 gram.')
       return null
     }
@@ -59,7 +65,7 @@ export function PetForm({ initial, submitLabel, confirmSave = false, onSubmit }:
       morphs,
       feedingPeriodDays: Math.round(days),
       feederType: feeder,
-      feederWeightGrams: Math.round(grams),
+      feederWeightGrams: volume ? Math.round(amount * 10) / 10 : Math.round(amount),
     }
   }
 
@@ -143,19 +149,19 @@ export function PetForm({ initial, submitLabel, confirmSave = false, onSubmit }:
             aria-label="Custom feeder"
           />
         </div>
-        <span className="field-hint">Pick Mouse, Rat, or Chicken, or type any other feeder.</span>
+        <span className="field-hint">Pick Mouse, Rat, Chicken, or Water Change, or type any other feeder.</span>
       </fieldset>
       <label>
-        Weight (grams)
+        {isWaterChange(feederType) ? 'Volume (liters)' : 'Weight (grams)'}
         <input
           type="number"
-          min={1}
+          min={isWaterChange(feederType) ? 0.1 : 1}
           max={100000}
-          step={1}
-          inputMode="numeric"
+          step={isWaterChange(feederType) ? 0.1 : 1}
+          inputMode="decimal"
           value={weight}
           onChange={(e) => setWeight(e.target.value)}
-          placeholder="e.g. 15"
+          placeholder={isWaterChange(feederType) ? 'e.g. 40' : 'e.g. 15'}
         />
       </label>
       {error ? <p className="error">{error}</p> : null}
