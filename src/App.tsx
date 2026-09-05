@@ -13,6 +13,7 @@ import { useAllFeedings, useFeedings, usePet, usePets } from './hooks/useDb'
 import { feederPrepLabel, feederPrepLines, feederSummary, type FeedingEvent, type FeedingOutcome, type Pet } from './types'
 import { coverPhotoPath } from './utils/coverPhoto'
 import { petIdFromQrText } from './utils/petQr'
+import { qrInkForPets, type QrInk } from './utils/qrColors'
 import { openPetQrPrintSheet } from './utils/qrPrintSheet'
 import { formatPretty, todayISO } from './utils/dates'
 import { computeSchedule, dueLabel, dueStatus, buildCycles, wasFedToday } from './utils/schedule'
@@ -554,6 +555,19 @@ function PrintQrPage() {
       return a.name.localeCompare(b.name)
     })
   }, [pets])
+  const stickerKey = stickers.map((pet) => `${pet.id}:${pet.coverAt ?? ''}`).join('|')
+  const [inkById, setInkById] = useState<Map<string, QrInk>>(new Map())
+
+  useEffect(() => {
+    if (stickers.length === 0) return
+    let cancelled = false
+    void qrInkForPets(stickers).then((palette) => {
+      if (!cancelled) setInkById(palette)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [stickerKey])
 
   return (
     <div className="qr-print-page">
@@ -569,7 +583,7 @@ function PrintQrPage() {
       ) : (
         <section className="qr-print-sheet">
           {stickers.map((pet) => (
-            <PrintQrSticker key={pet.id} pet={pet} />
+            <PrintQrSticker key={pet.id} pet={pet} ink={inkById.get(pet.id)} />
           ))}
         </section>
       )}
