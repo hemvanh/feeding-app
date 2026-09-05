@@ -25,6 +25,25 @@ export function guessGitHubRepo(): { owner: string; repo: string } | null {
   return { owner, repo: parts[0] }
 }
 
+function pagesUrlFor(owner: string, repo: string): string | null {
+  const o = owner.trim()
+  const r = repo.trim()
+  if (!o || !r) return null
+  if (r === `${o}.github.io`) return `https://${o}.github.io/`
+  return `https://${o}.github.io/${r}/`
+}
+
+/** Live GitHub Pages origin+path (no hash), so printed QR codes work off localhost. */
+export function githubPagesBaseUrl(): string {
+  if (typeof window !== 'undefined' && window.location.hostname.endsWith('.github.io')) {
+    const path = window.location.pathname.replace(/index\.html$/i, '')
+    const dir = !path || path === '/' ? '/' : path.endsWith('/') ? path : `${path}/`
+    return `${window.location.origin}${dir}`
+  }
+  const settings = typeof window !== 'undefined' ? getGitHubSettings() : { token: '', owner: '', repo: '' }
+  return pagesUrlFor(settings.owner, settings.repo) ?? 'https://hemvanh.github.io/feeding-app/'
+}
+
 export function getGitHubSettings(): GitHubSettings {
   const guessed = typeof window !== 'undefined' ? guessGitHubRepo() : null
   return {

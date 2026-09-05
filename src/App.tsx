@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react'
 import { CoverPhoto, CoverThumb } from './components/CoverPhoto'
 import { ConfirmDialog } from './components/ConfirmDialog'
+import { PetQrCode } from './components/PetQrCode'
+import { QrScanner } from './components/QrScanner'
 import { ExtendForm, FeedingForm } from './components/FeedingForm'
 import { MiniCalendar } from './components/MiniCalendar'
 import { PetForm } from './components/PetForm'
@@ -10,6 +12,7 @@ import { deleteGitHubFile, isGitHubConnected } from './github'
 import { useAllFeedings, useFeedings, usePet, usePets } from './hooks/useDb'
 import { feederPrepLabel, feederPrepLines, feederSummary, type FeedingEvent, type FeedingOutcome, type Pet } from './types'
 import { coverPhotoPath } from './utils/coverPhoto'
+import { petIdFromQrText } from './utils/petQr'
 import { formatPretty, todayISO } from './utils/dates'
 import { computeSchedule, dueLabel, dueStatus, buildCycles, wasFedToday } from './utils/schedule'
 
@@ -60,10 +63,12 @@ function AppShell({
   title,
   children,
   back,
+  onScan,
 }: {
   title?: string
   children: ReactNode
   back?: string
+  onScan?: () => void
 }) {
   return (
     <div className="app">
@@ -85,9 +90,26 @@ function AppShell({
         {back ? (
           <span className="spacer" />
         ) : (
-          <button type="button" className="primary-btn compact" onClick={() => go('/new')}>
-            New pet
-          </button>
+          <div className="topbar-actions">
+            {onScan ? (
+              <button type="button" className="primary-btn compact scan-btn" aria-label="Scan pet QR" onClick={onScan}>
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M7 3H4v3M17 3h3v3M7 21H4v-3M20 18v3h-3"
+                  />
+                  <path fill="currentColor" d="M6 6h5v5H6V6Zm1.5 1.5v2h2v-2h-2Zm5.5-1.5h5v5h-5V6Zm1.5 1.5v2h2v-2h-2ZM6 13h5v5H6v-5Zm1.5 1.5v2h2v-2h-2ZM13 13h2v2h-2v-2Zm3 0h2v2h-2v-2Zm-3 3h2v2h-2v-2Zm3 0h2v2h-2v-2Z" />
+                </svg>
+              </button>
+            ) : null}
+            <button type="button" className="primary-btn compact" onClick={() => go('/new')}>
+              New pet
+            </button>
+          </div>
         )}
       </header>
       <SyncBar />
@@ -100,6 +122,8 @@ function HomePage() {
   const pets = usePets()
   const events = useAllFeedings()
   const [filter, setFilter] = useState('')
+  const [scanning, setScanning] = useState(false)
+  const [scanError, setScanError] = useState('')
 
   const cards = useMemo(() => {
     if (!pets || !events) return []
@@ -144,8 +168,28 @@ function HomePage() {
     )
   }, [events, pets])
 
+  function handleQrScan(text: string) {
+    const id = petIdFromQrText(text)
+    if (!id) {
+      setScanError('This QR is not a pet code for this app.')
+      return
+    }
+    if (!pets?.some((pet) => pet.id === id)) {
+      setScanError('No matching pet on this device. Sync first, or create the pet.')
+      return
+    }
+    setScanning(false)
+    setScanError('')
+    go(`/pet/${id}`)
+  }
+
   return (
-    <AppShell>
+    <AppShell
+      onScan={() => {
+        setScanError('')
+        setScanning(true)
+      }}
+    >
       <label className="search-field">
         <span className="sr-only">Search pets</span>
         <input
@@ -154,6 +198,16 @@ function HomePage() {
           placeholder="Search name, species, morph"
         />
       </label>
+      {scanning ? (
+        <QrScanner
+          error={scanError}
+          onClose={() => {
+            setScanning(false)
+            setScanError('')
+          }}
+          onScan={handleQrScan}
+        />
+      ) : null}
       {pets && pets.length > 0 ? (
         <section className="panel feeder-prep" aria-label="Feeders to prepare">
           <h2>Prepare for overdue and due today</h2>
@@ -248,7 +302,7 @@ function NewPetPage() {
               createdAt: new Date().toISOString(),
             }
             await db.pets.add(pet)
-            go(`/pet/${pet.id}`)
+            go(`/pet/${pet.id}/edit?from=home`)
           }}
         />
       </section>
@@ -277,7 +331,10 @@ function EditPetPage({ id, back }: { id: string; back: string }) {
   return (
     <AppShell title={`Edit ${pet.name}`} back={back}>
       <section className="panel stack">
-        <CoverPhoto pet={pet} />
+        <div className="edit-media">
+          <CoverPhoto pet={pet} />
+          <PetQrCode pet={pet} />
+        </div>
         <PetForm
           initial={pet}
           submitLabel="Save changes"
