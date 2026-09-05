@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-05T13:43:30.761Z",
+  "updatedAt": "2026-09-05T13:45:21.763Z",
   "pets": [
     {
       "id": "21f1c20a-7825-4752-8c5a-d920c4658d50",
@@ -67,6 +67,19 @@
       "feederType": "Water Change",
       "feederWeightGrams": 250,
       "createdAt": "2026-09-05T13:39:28.800Z"
+    },
+    {
+      "id": "9b599211-8bff-4415-84ed-25a77714e443",
+      "name": "Com x Flo",
+      "species": "ComxFlo Snapping",
+      "morphs": [
+        "Hypo",
+        "Red Shell"
+      ],
+      "feedingPeriodDays": 5,
+      "feederType": "Water Change",
+      "feederWeightGrams": 150,
+      "createdAt": "2026-09-05T13:45:21.511Z"
     },
     {
       "id": "a06c4a8c-9e6e-4375-a13e-4122fad28332",
