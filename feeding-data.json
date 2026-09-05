@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-05T13:45:21.763Z",
+  "updatedAt": "2026-09-05T14:23:04.525Z",
   "pets": [
     {
       "id": "21f1c20a-7825-4752-8c5a-d920c4658d50",
@@ -132,7 +132,8 @@
       "feedingPeriodDays": 5,
       "feederType": "Fish/Egg/Vegies",
       "feederWeightGrams": 50,
-      "createdAt": "2026-09-05T13:30:45.666Z"
+      "createdAt": "2026-09-05T13:30:45.666Z",
+      "coverAt": "1788618181118"
     }
   ],
   "feedings": [
