@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-05T18:23:37.845Z",
+  "updatedAt": "2026-09-06T15:20:21.507Z",
   "pets": [
     {
       "id": "21f1c20a-7825-4752-8c5a-d920c4658d50",
@@ -94,7 +94,7 @@
       "createdAt": "2026-09-04T10:40:21.498Z",
       "coverAt": "1788537671238",
       "feederType": "Mouse",
-      "feederWeightGrams": 50
+      "feederWeightGrams": 40
     },
     {
       "id": "abb47286-0a34-4490-9d1f-e51d7036c327",
