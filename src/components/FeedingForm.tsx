@@ -1,5 +1,5 @@
-import { useState, type FormEvent } from 'react'
-import type { FeedingOutcome } from '../types'
+import { useEffect, useState, type FormEvent } from 'react'
+import { outcomeLabel, type FeedingOutcome } from '../types'
 import { formatPretty } from '../utils/dates'
 import { ConfirmDialog } from './ConfirmDialog'
 
@@ -8,8 +8,16 @@ const EXTENSION_DEFAULTS: Record<'refused' | 'regurgitated', number> = {
   regurgitated: 2,
 }
 
+const RESULT_CHOICES = [
+  ['fed', 'Ate'],
+  ['refused', 'Refused'],
+  ['regurgitated', 'Regurgitated'],
+  ['water-changed', 'Water Changed'],
+] as const
+
 type FeedingFormProps = {
   date: string
+  defaultOutcome?: FeedingOutcome
   onSubmit: (data: {
     date: string
     note: string
@@ -18,9 +26,9 @@ type FeedingFormProps = {
   }) => Promise<void> | void
 }
 
-export function FeedingForm({ date, onSubmit }: FeedingFormProps) {
+export function FeedingForm({ date, defaultOutcome = 'fed', onSubmit }: FeedingFormProps) {
   const [note, setNote] = useState('')
-  const [outcome, setOutcome] = useState<FeedingOutcome>('fed')
+  const [outcome, setOutcome] = useState<FeedingOutcome>(defaultOutcome)
   const [extensionDays, setExtensionDays] = useState(String(EXTENSION_DEFAULTS.refused))
   const [error, setError] = useState('')
   const [pending, setPending] = useState<{
@@ -29,6 +37,10 @@ export function FeedingForm({ date, onSubmit }: FeedingFormProps) {
     outcome: FeedingOutcome
     extensionDays: number
   } | null>(null)
+
+  useEffect(() => {
+    setOutcome(defaultOutcome)
+  }, [defaultOutcome])
 
   const failed = outcome === 'refused' || outcome === 'regurgitated'
 
@@ -58,7 +70,7 @@ export function FeedingForm({ date, onSubmit }: FeedingFormProps) {
     setPending(null)
     await onSubmit(data)
     setNote('')
-    setOutcome('fed')
+    setOutcome(defaultOutcome)
     setExtensionDays(String(EXTENSION_DEFAULTS.refused))
   }
 
@@ -71,13 +83,7 @@ export function FeedingForm({ date, onSubmit }: FeedingFormProps) {
       <fieldset>
         <legend>Result</legend>
         <div className="choice-row">
-          {(
-            [
-              ['fed', 'Ate'],
-              ['refused', 'Refused'],
-              ['regurgitated', 'Regurgitated'],
-            ] as const
-          ).map(([value, label]) => (
+          {RESULT_CHOICES.map(([value, label]) => (
             <label key={value} className={`choice ${outcome === value ? 'on' : ''}`}>
               <input
                 type="radio"
@@ -127,7 +133,7 @@ export function FeedingForm({ date, onSubmit }: FeedingFormProps) {
       {pending ? (
         <ConfirmDialog
           title="Add this feeding?"
-          message={`Record ${pending.outcome === 'fed' ? 'Ate' : pending.outcome === 'refused' ? 'Refused' : pending.outcome === 'regurgitated' ? 'Regurgitated' : 'Extended'} on ${formatPretty(pending.date)}.`}
+          message={`Record ${outcomeLabel(pending.outcome)} on ${formatPretty(pending.date)}.`}
           confirmLabel="Add Feeding"
           confirmKind="primary"
           onCancel={() => setPending(null)}
@@ -200,3 +206,4 @@ export function ExtendForm({ defaultDays, onSubmit }: ExtendFormProps) {
     </form>
   )
 }
+

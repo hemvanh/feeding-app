@@ -1,4 +1,4 @@
-import type { FeedingEvent, Pet, PetSchedule } from '../types'
+import { isSuccessfulOutcome, type FeedingEvent, type Pet, type PetSchedule } from '../types'
 import { addDays, daysBetween, todayISO } from './dates'
 
 function orderedEvents(events: FeedingEvent[]): FeedingEvent[] {
@@ -18,7 +18,7 @@ export function computeSchedule(
   let nextDueDate: string | null = null
 
   for (const event of ordered) {
-    if (event.outcome === 'fed') {
+    if (isSuccessfulOutcome(event.outcome)) {
       lastFedDate = event.date
       nextDueDate = addDays(event.date, pet.feedingPeriodDays)
       continue
@@ -56,7 +56,7 @@ export function buildCycles(pet: Pet, events: FeedingEvent[]): FeedingCycle[] {
   }
 
   for (const event of ordered) {
-    if (event.outcome === 'fed') {
+    if (isSuccessfulOutcome(event.outcome)) {
       closeCurrent(event.date)
       current = {
         fedDate: event.date,
@@ -96,6 +96,16 @@ export function dueLabel(nextDueDate: string | null, today = todayISO()): string
   if (delta < 0) return `Overdue by ${Math.abs(delta)} day${Math.abs(delta) === 1 ? '' : 's'}`
   if (delta === 0) return 'Due today'
   return `Due in ${delta} day${delta === 1 ? '' : 's'}`
+}
+
+export type PrepUrgency = 'today' | 'late' | 'very-late'
+
+export function prepUrgency(nextDueDate: string | null, today = todayISO()): PrepUrgency | null {
+  if (!nextDueDate) return null
+  const delta = daysBetween(today, nextDueDate)
+  if (delta === 0) return 'today'
+  if (delta >= 0) return null
+  return Math.abs(delta) < 3 ? 'late' : 'very-late'
 }
 
 function hslForProgress(progress: number, washed = false): string {

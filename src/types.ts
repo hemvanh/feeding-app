@@ -18,12 +18,25 @@ export type Species = (typeof SPECIES)[number]
 
 export const FEEDING_OUTCOMES = [
   'fed',
+  'water-changed',
   'refused',
   'regurgitated',
   'extended',
 ] as const
 
 export type FeedingOutcome = (typeof FEEDING_OUTCOMES)[number]
+
+export function isSuccessfulOutcome(outcome: FeedingOutcome): boolean {
+  return outcome === 'fed' || outcome === 'water-changed'
+}
+
+export function outcomeLabel(outcome: FeedingOutcome): string {
+  if (outcome === 'fed') return 'Ate'
+  if (outcome === 'water-changed') return 'Water Changed'
+  if (outcome === 'refused') return 'Refused'
+  if (outcome === 'regurgitated') return 'Regurgitated'
+  return 'Extended'
+}
 
 export const FEEDER_TYPES = ['Mouse', 'Rat', 'Chicken', 'Water Change'] as const
 

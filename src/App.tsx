@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { CoverPhoto, CoverThumb } from './components/CoverPhoto'
 import { ConfirmDialog } from './components/ConfirmDialog'
 import { PetQrCode, PrintQrSticker } from './components/PetQrCode'
@@ -10,13 +10,13 @@ import { SyncBar } from './components/SyncBar'
 import { db, newId } from './db'
 import { deleteGitHubFile, isGitHubConnected } from './github'
 import { useAllFeedings, useFeedings, usePet, usePets } from './hooks/useDb'
-import { feederPrepLabel, feederPrepLines, feederSummary, type FeedingEvent, type FeedingOutcome, type Pet } from './types'
+import { feederSummary, isWaterChange, outcomeLabel, type FeedingEvent, type FeedingOutcome, type Pet } from './types'
 import { coverPhotoPath } from './utils/coverPhoto'
 import { petIdFromQrText } from './utils/petQr'
 import { qrInkForPets, type QrInk } from './utils/qrColors'
 import { openPetQrPrintSheet } from './utils/qrPrintSheet'
 import { formatPretty, todayISO } from './utils/dates'
-import { computeSchedule, dueLabel, dueStatus, buildCycles, wasFedToday } from './utils/schedule'
+import { computeSchedule, dueLabel, dueStatus, buildCycles, wasFedToday, prepUrgency } from './utils/schedule'
 
 type Route =
   | { name: 'home' }
@@ -56,25 +56,20 @@ async function deletePetAndCover(pet: Pet) {
   go('/')
 }
 
-function outcomeLabel(outcome: FeedingOutcome): string {
-  if (outcome === 'fed') return 'Ate'
-  if (outcome === 'refused') return 'Refused'
-  if (outcome === 'regurgitated') return 'Regurgitated'
-  return 'Extended'
-}
-
 function AppShell({
   title,
   children,
   back,
   onScan,
   onPrintQrs,
+  showSync,
 }: {
   title?: string
   children: ReactNode
   back?: string
   onScan?: () => void
   onPrintQrs?: () => void
+  showSync?: boolean
 }) {
   return (
     <div className="app">
@@ -138,7 +133,7 @@ function AppShell({
           </div>
         )}
       </header>
-      <SyncBar />
+      {showSync ? <SyncBar /> : null}
       <main>{children}</main>
     </div>
   )
@@ -150,6 +145,14 @@ function HomePage() {
   const [filter, setFilter] = useState('')
   const [scanning, setScanning] = useState(false)
   const [scanError, setScanError] = useState('')
+  const [prepDocked, setPrepDocked] = useState(false)
+  const [prepHeight, setPrepHeight] = useState(0)
+  const prepRef = useRef<HTMLElement>(null)
+  const prepSentinelRef = useRef<HTMLDivElement>(null)
+  const targetFlashTimer = useRef(0)
+  const targetScrollTimer = useRef(0)
+  const pendingScrollEnd = useRef<(() => void) | null>(null)
+  const showPrep = Boolean(pets && pets.length > 0)
 
   const cards = useMemo(() => {
     if (!pets || !events) return []
@@ -181,18 +184,105 @@ function HomePage() {
       })
   }, [events, filter, pets])
 
-  const prepLines = useMemo(() => {
+  const prepItems = useMemo(() => {
     if (!pets || !events) return []
-    return feederPrepLines(
-      pets.filter((pet) => {
+    const rank = { 'very-late': 0, late: 1, today: 2 }
+    return pets
+      .flatMap((pet) => {
         const petEvents = events.filter((event) => event.petId === pet.id)
         const schedule = computeSchedule(pet, petEvents)
-        if (wasFedToday(schedule.lastFedDate)) return false
-        const status = dueStatus(schedule.nextDueDate)
-        return status === 'overdue' || status === 'today'
-      }),
-    )
+        if (wasFedToday(schedule.lastFedDate)) return []
+        const urgency = prepUrgency(schedule.nextDueDate)
+        if (!urgency) return []
+        const feed = feederSummary(pet).replace(' · ', ' ')
+        return [{
+          petId: pet.id,
+          label: feed ? `${pet.name} · ${feed}` : pet.name,
+          urgency,
+        }]
+      })
+      .sort((a, b) => {
+        if (rank[a.urgency] !== rank[b.urgency]) return rank[a.urgency] - rank[b.urgency]
+        return a.label.localeCompare(b.label)
+      })
   }, [events, pets])
+
+  useEffect(() => {
+    if (!showPrep) {
+      setPrepDocked(false)
+      return
+    }
+    const sentinel = prepSentinelRef.current
+    if (!sentinel) return
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        setPrepDocked(!entry.isIntersecting)
+      },
+      { threshold: 0, root: null, rootMargin: '0px' },
+    )
+    io.observe(sentinel)
+    return () => io.disconnect()
+  }, [showPrep])
+
+  useEffect(() => {
+    return () => {
+      window.clearTimeout(targetFlashTimer.current)
+      window.clearTimeout(targetScrollTimer.current)
+      if (pendingScrollEnd.current) {
+        window.removeEventListener('scrollend', pendingScrollEnd.current)
+      }
+    }
+  }, [])
+
+  useLayoutEffect(() => {
+    const el = prepRef.current
+    if (!el || prepDocked) return
+    setPrepHeight(el.getBoundingClientRect().height)
+  }, [prepDocked, prepItems, showPrep])
+
+  function scrollToPetCard(petId: string) {
+    const el = document.getElementById(`pet-card-${petId}`)
+    const bar = prepRef.current
+    if (!el || !bar) return
+    const target = el
+    const barBox = bar.getBoundingClientRect()
+    const dockedHeight = bar.classList.contains('is-docked') ? barBox.height : barBox.height - 4
+    const cardTop = window.scrollY + el.getBoundingClientRect().top
+    window.clearTimeout(targetFlashTimer.current)
+    window.clearTimeout(targetScrollTimer.current)
+    if (pendingScrollEnd.current) {
+      window.removeEventListener('scrollend', pendingScrollEnd.current)
+      pendingScrollEnd.current = null
+    }
+    document.querySelectorAll('.pet-card.is-targeted').forEach((card) => card.classList.remove('is-targeted'))
+
+    let flashed = false
+    function flashTarget() {
+      if (flashed) return
+      flashed = true
+      window.removeEventListener('scrollend', onScrollEnd)
+      window.clearTimeout(targetScrollTimer.current)
+      target.classList.remove('is-targeted')
+      void target.offsetWidth
+      target.classList.add('is-targeted')
+      targetFlashTimer.current = window.setTimeout(() => target.classList.remove('is-targeted'), 1500)
+    }
+
+    function onScrollEnd() {
+      pendingScrollEnd.current = null
+      flashTarget()
+    }
+
+    const alreadyInPlace = Math.abs(el.getBoundingClientRect().top - (barBox.bottom + 13)) < 4
+    window.scrollTo({ top: Math.max(0, cardTop - dockedHeight - 13), behavior: 'smooth' })
+    if (alreadyInPlace) {
+      flashTarget()
+      return
+    }
+    pendingScrollEnd.current = onScrollEnd
+    window.addEventListener('scrollend', onScrollEnd, { once: true })
+    targetScrollTimer.current = window.setTimeout(flashTarget, 700)
+  }
 
   function handleQrScan(text: string) {
     const id = petIdFromQrText(text)
@@ -211,6 +301,7 @@ function HomePage() {
 
   return (
     <AppShell
+      showSync
       onScan={() => {
         setScanError('')
         setScanning(true)
@@ -235,21 +326,55 @@ function HomePage() {
           onScan={handleQrScan}
         />
       ) : null}
-      {pets && pets.length > 0 ? (
-        <section className="panel feeder-prep" aria-label="Feeders to prepare">
-          <h2>Prepare for overdue and due today</h2>
-          {prepLines.length === 0 ? (
-            <p className="muted">Nothing to thaw right now.</p>
-          ) : (
-            <div className="feeder-prep-chips">
-              {prepLines.map((line) => (
-                <span key={`${line.type}-${line.grams ?? 'none'}`} className="feeder-prep-chip">
-                  {feederPrepLabel(line)}
-                </span>
-              ))}
-            </div>
-          )}
+      {showPrep ? (
+        <>
+          <div ref={prepSentinelRef} className="feeder-prep-sentinel" aria-hidden="true" />
+          {prepDocked ? <div className="feeder-prep-spacer" style={{ height: prepHeight }} aria-hidden="true" /> : null}
+          <section
+            ref={prepRef}
+            className={`panel feeder-prep${prepDocked ? ' is-docked' : ''}`}
+            aria-label="Feeders to prepare"
+          >
+          <div className="feeder-prep-body">
+            <h2>Prepare for overdue and due today</h2>
+            {prepItems.length === 0 ? (
+              <p className="muted">Nothing to thaw right now.</p>
+            ) : (
+              <div className="feeder-prep-chips">
+                {prepItems.map((item) => (
+                  <button
+                    key={item.petId}
+                    type="button"
+                    className={`feeder-prep-chip ${item.urgency}`}
+                    onClick={() => scrollToPetCard(item.petId)}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          {prepDocked ? (
+            <button
+              type="button"
+              className="primary-btn compact feeder-prep-top"
+              aria-label="Scroll to top"
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.4"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M6 14.5 12 8.5 18 14.5"
+                />
+              </svg>
+            </button>
+          ) : null}
         </section>
+        </>
       ) : null}
       {pets === undefined || events === undefined ? (
         <section className="empty">
@@ -265,7 +390,7 @@ function HomePage() {
       ) : (
         <div className="pet-grid">
           {cards.map(({ pet, schedule, status, fedToday, cycles }) => (
-            <article key={pet.id} className={`pet-card status-${fedToday ? 'fed-today' : status}`}>
+            <article id={`pet-card-${pet.id}`} key={pet.id} className={`pet-card status-${fedToday ? 'fed-today' : status}`}>
               <div className="pet-card-head">
                 <div className="cover-thumb-wrap">
                   <CoverThumb pet={pet} />
@@ -301,7 +426,7 @@ function HomePage() {
               <MiniCalendar cycles={cycles} nextDueDate={schedule.nextDueDate} />
               <div className="pet-card-actions">
                 <button type="button" className="primary-btn compact" onClick={() => go(`/pet/${pet.id}`)}>
-                  Feed !
+                  {isWaterChange(pet.feederType) ? 'Change' : 'Feed'}
                 </button>
                 <span className="muted small">
                   Every {pet.feedingPeriodDays} days
@@ -437,33 +562,6 @@ function PetPage({ id }: { id: string }) {
 
   return (
     <AppShell title={pet.name} back="/">
-      <section className="panel pet-hero">
-        <CoverPhoto pet={pet} editable={false} />
-        <p className="muted">
-          {pet.species}
-          {pet.morphs.length ? ` · ${pet.morphs.join(' / ')}` : ''}
-        </p>
-        <span className={`badge ${status}`}>{dueLabel(schedule.nextDueDate)}</span>
-        <p>
-          Feeding period: every <strong>{pet.feedingPeriodDays}</strong> days
-          {feederSummary(pet) ? ` · ${feederSummary(pet)}` : ''}
-          {schedule.lastFedDate ? ` · Last ate ${formatPretty(schedule.lastFedDate)}` : ''}
-          {schedule.nextDueDate ? ` · Next ${formatPretty(schedule.nextDueDate)}` : ''}
-        </p>
-      </section>
-
-      <section className="panel">
-        <MiniCalendar
-          cycles={buildCycles(pet, events)}
-          nextDueDate={schedule.nextDueDate}
-          selectedDate={feedDate}
-          onSelectDate={(iso) => {
-            setFeedDate(iso)
-            setTab('feed')
-          }}
-        />
-      </section>
-
       <section className="panel">
         <div className="tabs">
           <button type="button" className={tab === 'feed' ? 'on' : ''} onClick={() => setTab('feed')}>
@@ -476,6 +574,7 @@ function PetPage({ id }: { id: string }) {
         {tab === 'feed' ? (
           <FeedingForm
             date={feedDate}
+            defaultOutcome={isWaterChange(pet.feederType) ? 'water-changed' : 'fed'}
             onSubmit={async (data) => {
               await saveEvent(data)
               go('/')
@@ -495,6 +594,33 @@ function PetPage({ id }: { id: string }) {
             }}
           />
         )}
+      </section>
+
+      <section className="panel">
+        <MiniCalendar
+          cycles={buildCycles(pet, events)}
+          nextDueDate={schedule.nextDueDate}
+          selectedDate={feedDate}
+          onSelectDate={(iso) => {
+            setFeedDate(iso)
+            setTab('feed')
+          }}
+        />
+      </section>
+
+      <section className="panel pet-hero">
+        <CoverPhoto pet={pet} editable={false} />
+        <p className="muted">
+          {pet.species}
+          {pet.morphs.length ? ` · ${pet.morphs.join(' / ')}` : ''}
+        </p>
+        <span className={`badge ${status}`}>{dueLabel(schedule.nextDueDate)}</span>
+        <p>
+          Feeding period: every <strong>{pet.feedingPeriodDays}</strong> days
+          {feederSummary(pet) ? ` · ${feederSummary(pet)}` : ''}
+          {schedule.lastFedDate ? ` · Last ate ${formatPretty(schedule.lastFedDate)}` : ''}
+          {schedule.nextDueDate ? ` · Next ${formatPretty(schedule.nextDueDate)}` : ''}
+        </p>
       </section>
 
       <section className="panel">
