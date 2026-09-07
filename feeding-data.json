@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-07T17:35:48.560Z",
+  "updatedAt": "2026-09-07T17:47:16.480Z",
   "pets": [
     {
       "id": "21f1c20a-7825-4752-8c5a-d920c4658d50",
@@ -28,6 +28,18 @@
       "coverAt": "2026-09-04T15:48:33.249Z",
       "feederType": "Mouse",
       "feederWeightGrams": 20
+    },
+    {
+      "id": "44804200-1fa4-45f6-b998-87108fb48627",
+      "name": "Corn - Okeetee",
+      "species": "Corn Snake",
+      "morphs": [
+        "Okeetee"
+      ],
+      "feedingPeriodDays": 4,
+      "feederType": "Mouse",
+      "feederWeightGrams": 5,
+      "createdAt": "2026-09-07T17:47:16.219Z"
     },
     {
       "id": "570c580d-2418-481a-b85e-1c09bec829d4",
