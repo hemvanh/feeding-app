@@ -240,14 +240,46 @@ function HomePage() {
     setPrepHeight(el.getBoundingClientRect().height)
   }, [prepDocked, prepItems, showPrep])
 
+  function measureDockedPrepHeight(bar: HTMLElement): number {
+    if (bar.classList.contains('is-docked')) return bar.getBoundingClientRect().height
+    const probe = bar.cloneNode(true) as HTMLElement
+    probe.classList.add('is-docked')
+    probe.setAttribute('aria-hidden', 'true')
+    probe.tabIndex = -1
+    probe.style.visibility = 'hidden'
+    probe.style.pointerEvents = 'none'
+    if (!probe.querySelector('.feeder-prep-top')) {
+      const bump = document.createElement('span')
+      bump.className = 'primary-btn compact feeder-prep-top'
+      probe.appendChild(bump)
+    }
+    document.body.appendChild(probe)
+    const height = probe.getBoundingClientRect().height
+    probe.remove()
+    return height
+  }
+
+  function alignCardBelowPrep(card: HTMLElement, bar: HTMLElement) {
+    const delta = card.getBoundingClientRect().top - (bar.getBoundingClientRect().bottom + 13)
+    if (Math.abs(delta) > 2) window.scrollBy(0, delta)
+  }
+
+  function cardFullyVisibleBelowPrep(card: HTMLElement, bar: HTMLElement) {
+    const box = card.getBoundingClientRect()
+    const barBottom = bar.getBoundingClientRect().bottom
+    return (
+      box.top >= barBottom - 2 &&
+      box.bottom <= window.innerHeight + 2 &&
+      box.left >= -2 &&
+      box.right <= window.innerWidth + 2
+    )
+  }
+
   function scrollToPetCard(petId: string) {
     const el = document.getElementById(`pet-card-${petId}`)
     const bar = prepRef.current
     if (!el || !bar) return
     const target = el
-    const barBox = bar.getBoundingClientRect()
-    const dockedHeight = bar.classList.contains('is-docked') ? barBox.height : barBox.height - 4
-    const cardTop = window.scrollY + el.getBoundingClientRect().top
     window.clearTimeout(targetFlashTimer.current)
     window.clearTimeout(targetScrollTimer.current)
     if (pendingScrollEnd.current) {
@@ -257,31 +289,51 @@ function HomePage() {
     document.querySelectorAll('.pet-card.is-targeted').forEach((card) => card.classList.remove('is-targeted'))
 
     let flashed = false
-    function flashTarget() {
+    function stopJumpWatch() {
+      if (pendingScrollEnd.current) {
+        window.removeEventListener('scrollend', pendingScrollEnd.current)
+        pendingScrollEnd.current = null
+      }
+      window.clearTimeout(targetScrollTimer.current)
+    }
+
+    function flashTarget(align: boolean) {
       if (flashed) return
       flashed = true
-      window.removeEventListener('scrollend', onScrollEnd)
-      window.clearTimeout(targetScrollTimer.current)
+      stopJumpWatch()
+      const barNow = prepRef.current
+      if (align && barNow) alignCardBelowPrep(target, barNow)
       target.classList.remove('is-targeted')
       void target.offsetWidth
       target.classList.add('is-targeted')
       targetFlashTimer.current = window.setTimeout(() => target.classList.remove('is-targeted'), 1500)
     }
 
-    function onScrollEnd() {
-      pendingScrollEnd.current = null
-      flashTarget()
+    function finishJump() {
+      if (flashed) return
+      stopJumpWatch()
+      const nearDest = Math.abs(window.scrollY - dest) <= 40
+      if (nearDest && Math.abs(window.scrollY - dest) > 3) {
+        window.scrollTo({ top: dest, behavior: 'auto' })
+      }
+      requestAnimationFrame(() => requestAnimationFrame(() => flashTarget(nearDest)))
     }
 
-    const alreadyInPlace = Math.abs(el.getBoundingClientRect().top - (barBox.bottom + 13)) < 4
-    window.scrollTo({ top: Math.max(0, cardTop - dockedHeight - 13), behavior: 'smooth' })
-    if (alreadyInPlace) {
-      flashTarget()
+    if (cardFullyVisibleBelowPrep(target, bar)) {
+      flashTarget(false)
       return
     }
-    pendingScrollEnd.current = onScrollEnd
-    window.addEventListener('scrollend', onScrollEnd, { once: true })
-    targetScrollTimer.current = window.setTimeout(flashTarget, 700)
+
+    const dockedHeight = measureDockedPrepHeight(bar)
+    const dest = Math.max(0, window.scrollY + target.getBoundingClientRect().top - dockedHeight - 13)
+    if (Math.abs(dest - window.scrollY) < 2) {
+      flashTarget(true)
+      return
+    }
+    pendingScrollEnd.current = finishJump
+    window.addEventListener('scrollend', finishJump, { once: true })
+    window.scrollTo({ top: dest, behavior: 'smooth' })
+    targetScrollTimer.current = window.setTimeout(finishJump, 800)
   }
 
   function handleQrScan(text: string) {
