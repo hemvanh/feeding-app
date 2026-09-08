@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-08T05:58:14.519Z",
+  "updatedAt": "2026-09-08T08:38:22.755Z",
   "pets": [
     {
       "id": "0865826f-79d8-4d0a-a6ee-926ab13c6346",
@@ -196,6 +196,21 @@
       "feederWeightGrams": 200,
       "createdAt": "2026-09-05T14:37:25.248Z",
       "coverAt": "1788619092122"
+    },
+    {
+      "id": "c0ce8237-f2de-4c67-b218-ab4912755d2f",
+      "name": "Ball OD Fire Het. DG",
+      "species": "Ball Python",
+      "morphs": [
+        "Orange Dream",
+        "Fire",
+        "Pastel",
+        "Het DG"
+      ],
+      "feedingPeriodDays": 5,
+      "feederType": "Mouse",
+      "feederWeightGrams": 30,
+      "createdAt": "2026-09-08T08:38:22.495Z"
     },
     {
       "id": "c46785d7-af1b-4305-aee7-611a3a675fbc",
