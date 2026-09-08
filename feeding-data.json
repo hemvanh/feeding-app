@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-08T05:36:41.555Z",
+  "updatedAt": "2026-09-08T05:38:22.316Z",
   "pets": [
     {
       "id": "21f1c20a-7825-4752-8c5a-d920c4658d50",
@@ -68,6 +68,21 @@
       "coverAt": "1788543328703",
       "feederType": "Dubia",
       "feederWeightGrams": 10
+    },
+    {
+      "id": "7606fadc-22c3-4546-be93-3a310566a3e2",
+      "name": "Ball Leopard Pastel",
+      "species": "Ball Python",
+      "morphs": [
+        "Leopard",
+        "Pastel",
+        "Butter",
+        "Enchi"
+      ],
+      "feedingPeriodDays": 12,
+      "feederType": "Mouse",
+      "feederWeightGrams": 60,
+      "createdAt": "2026-09-08T05:38:22.057Z"
     },
     {
       "id": "899832e5-9475-4372-b7d3-df1660958960",
