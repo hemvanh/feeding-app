@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-08T08:38:22.755Z",
+  "updatedAt": "2026-09-08T08:47:11.780Z",
   "pets": [
     {
       "id": "0865826f-79d8-4d0a-a6ee-926ab13c6346",
@@ -251,7 +251,8 @@
       "feederType": "Fish/Egg/Vegies",
       "feederWeightGrams": 50,
       "createdAt": "2026-09-05T13:30:45.666Z",
-      "coverAt": "1788618181118"
+      "coverAt": "1788618181118",
+      "sex": "male"
     },
     {
       "id": "de71d3fc-b1b9-48d5-aace-4b6aca5438dd",
