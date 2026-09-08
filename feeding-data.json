@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-08T05:38:43.325Z",
+  "updatedAt": "2026-09-08T05:42:54.472Z",
   "pets": [
     {
       "id": "21f1c20a-7825-4752-8c5a-d920c4658d50",
@@ -41,6 +41,20 @@
       "feederWeightGrams": 5,
       "createdAt": "2026-09-07T17:47:16.219Z",
       "coverAt": "1788803248427"
+    },
+    {
+      "id": "4697b090-0321-40f0-afc5-2db6da8ac989",
+      "name": "Ball Leopard Pastel Fire",
+      "species": "Ball Python",
+      "morphs": [
+        "Leopard",
+        "Pastel",
+        "Fire"
+      ],
+      "feedingPeriodDays": 7,
+      "feederType": "Mouse",
+      "feederWeightGrams": 50,
+      "createdAt": "2026-09-08T05:42:54.210Z"
     },
     {
       "id": "570c580d-2418-481a-b85e-1c09bec829d4",
