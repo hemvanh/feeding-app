@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-08T05:54:54.630Z",
+  "updatedAt": "2026-09-08T05:58:05.102Z",
   "pets": [
     {
       "id": "0865826f-79d8-4d0a-a6ee-926ab13c6346",
@@ -15,6 +15,20 @@
       "feederWeightGrams": 40,
       "createdAt": "2026-09-08T05:50:20.615Z",
       "coverAt": "1788846692266"
+    },
+    {
+      "id": "099dd739-7a0b-4d00-9561-836e29fa42ce",
+      "name": "Ball DG Pastel YB",
+      "species": "Ball Python",
+      "morphs": [
+        "Desert Ghost",
+        "Pastel",
+        "Yellow Belly"
+      ],
+      "feedingPeriodDays": 7,
+      "feederType": "Mouse",
+      "feederWeightGrams": 50,
+      "createdAt": "2026-09-08T05:58:04.842Z"
     },
     {
       "id": "21f1c20a-7825-4752-8c5a-d920c4658d50",
