@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-07T17:47:30.749Z",
+  "updatedAt": "2026-09-08T05:36:41.555Z",
   "pets": [
     {
       "id": "21f1c20a-7825-4752-8c5a-d920c4658d50",
@@ -162,6 +162,19 @@
       "feederWeightGrams": 50,
       "createdAt": "2026-09-05T13:30:45.666Z",
       "coverAt": "1788618181118"
+    },
+    {
+      "id": "de71d3fc-b1b9-48d5-aace-4b6aca5438dd",
+      "name": "Milk Hon. Alb.",
+      "species": "Milk Snake",
+      "morphs": [
+        "Honduran",
+        "Albino"
+      ],
+      "feedingPeriodDays": 7,
+      "feederType": "Mouse",
+      "feederWeightGrams": 40,
+      "createdAt": "2026-09-08T05:36:41.297Z"
     }
   ],
   "feedings": [
