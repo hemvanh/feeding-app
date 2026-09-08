@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-08T05:43:55.434Z",
+  "updatedAt": "2026-09-08T05:47:25.436Z",
   "pets": [
     {
       "id": "21f1c20a-7825-4752-8c5a-d920c4658d50",
@@ -99,6 +99,20 @@
       "feederWeightGrams": 60,
       "createdAt": "2026-09-08T05:38:22.057Z",
       "coverAt": "1788845919322"
+    },
+    {
+      "id": "861eb30a-6a14-41ac-8013-55e520df20cb",
+      "name": "Ball Pastel Grav./YB",
+      "species": "Ball Python",
+      "morphs": [
+        "Pastel",
+        "Gravel",
+        "Yellow Belly"
+      ],
+      "feedingPeriodDays": 7,
+      "feederType": "Mouse",
+      "feederWeightGrams": 50,
+      "createdAt": "2026-09-08T05:47:25.177Z"
     },
     {
       "id": "899832e5-9475-4372-b7d3-df1660958960",
