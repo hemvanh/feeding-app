@@ -91,7 +91,7 @@ export function wasFedToday(lastFedDate: string | null, today = todayISO()): boo
 }
 
 export function dueLabel(nextDueDate: string | null, today = todayISO()): string {
-  if (!nextDueDate) return 'No feeding recorded yet'
+  if (!nextDueDate) return 'No Record'
   const delta = daysBetween(today, nextDueDate)
   if (delta < 0) return `Overdue by ${Math.abs(delta)} day${Math.abs(delta) === 1 ? '' : 's'}`
   if (delta === 0) return 'Due today'

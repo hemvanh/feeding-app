@@ -6,11 +6,13 @@ import { QrScanner } from './components/QrScanner'
 import { ExtendForm, FeedingForm } from './components/FeedingForm'
 import { MiniCalendar } from './components/MiniCalendar'
 import { PetForm } from './components/PetForm'
+import { SexIcon } from './components/SexIcon'
+import { WeightTracker } from './components/WeightTracker'
 import { SyncBar } from './components/SyncBar'
 import { db, newId } from './db'
 import { deleteGitHubFile, isGitHubConnected } from './github'
 import { useAllFeedings, useFeedings, usePet, usePets } from './hooks/useDb'
-import { feederSummary, isWaterChange, outcomeLabel, type FeedingEvent, type FeedingOutcome, type Pet } from './types'
+import { feederSummary, isWaterChange, latestWeighing, formatGrams, outcomeLabel, type FeedingEvent, type FeedingOutcome, type Pet } from './types'
 import { coverPhotoPath } from './utils/coverPhoto'
 import { petIdFromQrText } from './utils/petQr'
 import { qrInkForPets, type QrInk } from './utils/qrColors'
@@ -286,7 +288,9 @@ function HomePage() {
       window.removeEventListener('scrollend', pendingScrollEnd.current)
       pendingScrollEnd.current = null
     }
-    document.querySelectorAll('.pet-card.is-targeted').forEach((card) => card.classList.remove('is-targeted'))
+    document.querySelectorAll('.pet-card.is-targeted, .feeder-prep-chip.is-targeted').forEach((node) => {
+      node.classList.remove('is-targeted')
+    })
 
     let flashed = false
     function stopJumpWatch() {
@@ -303,10 +307,18 @@ function HomePage() {
       stopJumpWatch()
       const barNow = prepRef.current
       if (align && barNow) alignCardBelowPrep(target, barNow)
+      const chip = document.getElementById(`prep-chip-${petId}`)
       target.classList.remove('is-targeted')
+      chip?.classList.remove('is-targeted')
       void target.offsetWidth
+      if (chip) void chip.offsetWidth
       target.classList.add('is-targeted')
-      targetFlashTimer.current = window.setTimeout(() => target.classList.remove('is-targeted'), 1500)
+      chip?.classList.add('is-targeted')
+      window.clearTimeout(targetFlashTimer.current)
+      targetFlashTimer.current = window.setTimeout(() => {
+        target.classList.remove('is-targeted')
+        chip?.classList.remove('is-targeted')
+      }, 1500)
     }
 
     function finishJump() {
@@ -396,6 +408,7 @@ function HomePage() {
                 {prepItems.map((item) => (
                   <button
                     key={item.petId}
+                    id={`prep-chip-${item.petId}`}
                     type="button"
                     className={`feeder-prep-chip ${item.urgency}`}
                     onClick={() => scrollToPetCard(item.petId)}
@@ -441,7 +454,9 @@ function HomePage() {
         </section>
       ) : (
         <div className="pet-grid">
-          {cards.map(({ pet, schedule, status, fedToday, cycles }) => (
+          {cards.map(({ pet, schedule, status, fedToday, cycles }) => {
+            const weight = latestWeighing(pet.weighings)
+            return (
             <article id={`pet-card-${pet.id}`} key={pet.id} className={`pet-card status-${fedToday ? 'fed-today' : status}`}>
               <div className="pet-card-head">
                 <div className="cover-thumb-wrap">
@@ -469,7 +484,13 @@ function HomePage() {
                   <span className={`badge ${fedToday ? 'fed-today' : status}`}>
                     {fedToday ? 'Fed today' : dueLabel(schedule.nextDueDate)}
                   </span>
-                  <p className="pet-species">{pet.species}</p>
+                  <p className="pet-species">
+                    <SexIcon sex={pet.sex} />
+                    <span>
+                      {pet.species}
+                      {weight ? ` · ${formatGrams(weight.grams)}g` : ''}
+                    </span>
+                  </p>
                   <p className="pet-morphs">
                     {pet.morphs.length ? pet.morphs.join(' / ') : '\u00a0'}
                   </p>
@@ -486,7 +507,8 @@ function HomePage() {
                 </span>
               </div>
             </article>
-          ))}
+            )
+          })}
         </div>
       )}
     </AppShell>
@@ -548,6 +570,7 @@ function EditPetPage({ id, back }: { id: string; back: string }) {
             go(back)
           }}
         />
+        <WeightTracker pet={pet} />
         <button type="button" className="danger-btn" onClick={() => setConfirmDelete(true)}>
           Delete pet
         </button>

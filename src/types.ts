@@ -50,16 +50,58 @@ export function feederAmountUnit(type: string | undefined): 'L' | 'g' {
   return isWaterChange(type) ? 'L' : 'g'
 }
 
+export const PET_SEXES = ['male', 'female', 'unsexed'] as const
+
+export type PetSex = (typeof PET_SEXES)[number]
+
+export function petSex(value: PetSex | undefined): PetSex {
+  return value === 'male' || value === 'female' ? value : 'unsexed'
+}
+
+export function petSexLabel(value: PetSex | undefined): string {
+  const sex = petSex(value)
+  if (sex === 'male') return 'Male'
+  if (sex === 'female') return 'Female'
+  return 'Unsexed'
+}
+
+export type Weighing = {
+  id: string
+  date: string
+  grams: number
+  createdAt: string
+}
+
 export type Pet = {
   id: string
   name: string
   species: Species
   morphs: string[]
+  sex?: PetSex
   feedingPeriodDays: number
   feederType?: string
   feederWeightGrams?: number
   createdAt: string
   coverAt?: string
+  weighings?: Weighing[]
+}
+
+export function formatGrams(grams: number): string {
+  return Math.round(grams).toLocaleString('en-US')
+}
+
+export function parseGramsInput(raw: string): number | null {
+  const n = Number(raw.replace(/,/g, '').trim())
+  if (!Number.isFinite(n) || n <= 0 || n > 1_000_000) return null
+  return Math.round(n)
+}
+
+export function latestWeighing(weighings: Weighing[] | undefined): Weighing | null {
+  if (!weighings?.length) return null
+  return [...weighings].sort((a, b) => {
+    if (a.date !== b.date) return b.date.localeCompare(a.date)
+    return b.createdAt.localeCompare(a.createdAt)
+  })[0]
 }
 
 export type FeedingEvent = {

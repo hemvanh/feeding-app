@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { FEEDER_TYPES, SPECIES, isWaterChange, type Pet, type Species } from '../types'
+import { FEEDER_TYPES, PET_SEXES, SPECIES, isWaterChange, petSex, petSexLabel, type Pet, type PetSex, type Species } from '../types'
 import { ConfirmDialog } from './ConfirmDialog'
 import { MorphPicker } from './MorphPicker'
 
@@ -7,6 +7,7 @@ type PetFields = {
   name: string
   species: Species
   morphs: string[]
+  sex: PetSex
   feedingPeriodDays: number
   feederType: string
   feederWeightGrams: number
@@ -23,6 +24,7 @@ export function PetForm({ initial, submitLabel, confirmSave = false, onSubmit }:
   const [name, setName] = useState(initial?.name ?? '')
   const [species, setSpecies] = useState<Species>(initial?.species ?? 'Ball Python')
   const [morphs, setMorphs] = useState<string[]>(initial?.morphs ?? [])
+  const [sex, setSex] = useState<PetSex>(petSex(initial?.sex))
   const [period, setPeriod] = useState(String(initial?.feedingPeriodDays ?? 7))
   const [feederType, setFeederType] = useState(initial?.feederType ?? '')
   const [weight, setWeight] = useState(
@@ -63,6 +65,7 @@ export function PetForm({ initial, submitLabel, confirmSave = false, onSubmit }:
       name: trimmed,
       species,
       morphs,
+      sex,
       feedingPeriodDays: Math.round(days),
       feederType: feeder,
       feederWeightGrams: volume ? Math.round(amount * 10) / 10 : Math.round(amount),
@@ -110,6 +113,23 @@ export function PetForm({ initial, submitLabel, confirmSave = false, onSubmit }:
           ))}
         </select>
       </label>
+      <fieldset>
+        <legend>Sex</legend>
+        <div className="choice-row">
+          {PET_SEXES.map((value) => (
+            <label key={value} className={`choice${sex === value ? ' on' : ''}`}>
+              <input
+                type="radio"
+                name="pet-sex"
+                checked={sex === value}
+                onChange={() => setSex(value)}
+              />
+              {petSexLabel(value)}
+            </label>
+          ))}
+        </div>
+        <span className="field-hint">Unsexed means this pet could be male or female.</span>
+      </fieldset>
       <fieldset>
         <legend>Morphs</legend>
         <MorphPicker species={species} value={morphs} onChange={setMorphs} />

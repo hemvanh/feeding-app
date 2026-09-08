@@ -55,11 +55,29 @@ export function MiniCalendar({
     <div className="calendar">
       <div className="calendar-nav">
         <button type="button" className="icon-btn" onClick={() => shift(-1)} aria-label="Previous month">
-          ‹
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M14.5 6 8.5 12l6 6"
+            />
+          </svg>
         </button>
         <span>{monthLabel(cursor.year, cursor.month)}</span>
         <button type="button" className="icon-btn" onClick={() => shift(1)} aria-label="Next month">
-          ›
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M9.5 6l6 6-6 6"
+            />
+          </svg>
         </button>
       </div>
       <div className="calendar-grid">

@@ -179,6 +179,12 @@ main {
   padding: 16px;
 }
 
+.pet-card {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+
 .empty {
   text-align: center;
   display: grid;
@@ -198,7 +204,7 @@ main {
   justify-content: space-between;
   gap: 10px;
   align-items: flex-start;
-  margin-bottom: 12px;
+  margin-bottom: 0;
   min-height: 4.6rem;
 }
 
@@ -359,6 +365,24 @@ main {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.pet-species {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 1.5em;
+}
+.pet-sex-icon {
+  width: 1.28em;
+  height: 1.28em;
+  flex: none;
+}
+.pet-sex-icon.male { color: #3a7fc4; }
+.pet-sex-icon.female { color: #c45a86; }
+.pet-species span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
 .pet-card-head .badge {
   justify-self: end;
@@ -367,10 +391,33 @@ main {
 
 .pet-card-actions {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-top: 12px;
-  gap: 8px;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 2px;
+}
+.pet-card-actions .primary-btn.compact {
+  flex: none;
+  min-height: 36px;
+  padding: 8px 14px;
+}
+.pet-card-actions .muted {
+  flex: 1;
+  min-width: 0;
+  text-align: right;
+  line-height: 1.3;
+}
+  display: grid;
+  gap: 12px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+.weight-tracker h2 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+.weight-add {
+  gap: 10px;
 }
 
 .muted { color: var(--muted); }
@@ -484,7 +531,7 @@ input, select, textarea {
 .badge.overdue, .pill.refused, .pill.regurgitated { background: #fde8e6; color: var(--red); }
 .badge.none, .pill.extended { background: #eef1ea; color: var(--muted); }
 
-.calendar { display: grid; gap: 8px; }
+.calendar { display: grid; gap: 10px; }
 .calendar-nav {
   display: flex;
   justify-content: space-between;
@@ -492,6 +539,17 @@ input, select, textarea {
   font-weight: 650;
 }
 .icon-btn { width: 36px; height: 36px; padding: 0; }
+.calendar-nav .icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+}
+.calendar-nav .icon-btn svg {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
 .calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
@@ -559,29 +617,43 @@ button.calendar-cell {
   width: 100%;
 }
 .calendar-legend {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(20px, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+  column-gap: 10px;
   font-size: 0.8rem;
   color: var(--muted);
+  min-height: 18px;
+}
+.calendar-legend > span:not(.legend-gradient) {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  line-height: 1;
+  white-space: nowrap;
 }
 .legend-gradient {
-  flex: 1;
+  width: 100%;
   height: 8px;
   border-radius: 99px;
   background: linear-gradient(90deg, hsl(142 52% 38%), hsl(8 74% 32%));
+  align-self: center;
 }
 .swatch {
-  display: inline-block;
-  width: 10px;
-  height: 10px;
+  display: block;
+  width: 8px;
+  height: 8px;
   border-radius: 99px;
-  margin-right: 4px;
+  flex: none;
 }
 .swatch.fed { background: hsl(142 52% 38%); }
 .swatch.due { background: hsl(8 74% 32%); }
-.calendar-legend.marks { justify-content: flex-start; gap: 16px; }
+.calendar-legend.marks {
+  display: flex;
+  grid-template-columns: none;
+  justify-content: flex-start;
+  gap: 16px;
+}
 .mark {
   display: inline-block;
   width: 14px;
@@ -805,6 +877,50 @@ button.feeder-prep-chip.very-late {
   background: #8a1812;
   border-color: #6a120e;
   color: #fff;
+}
+button.feeder-prep-chip.is-targeted {
+  animation: prep-chip-glow 1.5s ease-in-out;
+}
+@keyframes prep-chip-glow {
+  0%, 40%, 100% { box-shadow: 0 0 0 0 rgb(44 58 45 / 0); }
+  26.67%, 53.33% {
+    box-shadow:
+      0 0 0 3px var(--line),
+      0 0 18px 6px color-mix(in srgb, var(--line) 85%, transparent);
+  }
+}
+button.feeder-prep-chip.today.is-targeted {
+  animation-name: prep-chip-glow-today;
+}
+@keyframes prep-chip-glow-today {
+  0%, 40%, 100% { box-shadow: 0 0 0 0 rgb(22 69 40 / 0); }
+  26.67%, 53.33% {
+    box-shadow:
+      0 0 0 3px #8fd4a4,
+      0 0 20px 6px rgb(143 212 164 / 0.95);
+  }
+}
+button.feeder-prep-chip.late.is-targeted {
+  animation-name: prep-chip-glow-late;
+}
+@keyframes prep-chip-glow-late {
+  0%, 40%, 100% { box-shadow: 0 0 0 0 rgb(107 84 6 / 0); }
+  26.67%, 53.33% {
+    box-shadow:
+      0 0 0 3px #f6d889,
+      0 0 20px 6px rgb(246 216 137 / 0.95);
+  }
+}
+button.feeder-prep-chip.very-late.is-targeted {
+  animation-name: prep-chip-glow-very-late;
+}
+@keyframes prep-chip-glow-very-late {
+  0%, 40%, 100% { box-shadow: 0 0 0 0 rgb(106 18 14 / 0); }
+  26.67%, 53.33% {
+    box-shadow:
+      0 0 0 3px #f7c1bb,
+      0 0 20px 6px rgb(247 193 187 / 0.95);
+  }
 }
 .feeder-prep.is-docked {
   position: fixed;
