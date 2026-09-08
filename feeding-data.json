@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-08T08:49:37.216Z",
+  "updatedAt": "2026-09-08T09:10:29.760Z",
   "pets": [
     {
       "id": "0865826f-79d8-4d0a-a6ee-926ab13c6346",
@@ -114,7 +114,15 @@
       "coverAt": "1788543328703",
       "feederType": "Dubia",
       "feederWeightGrams": 10,
-      "sex": "male"
+      "sex": "male",
+      "weighings": [
+        {
+          "id": "8167b0b8-a7b9-4b17-8a5d-3433d0d7eab7",
+          "date": "2026-09-08",
+          "grams": 200,
+          "createdAt": "2026-09-08T09:10:29.491Z"
+        }
+      ]
     },
     {
       "id": "7606fadc-22c3-4546-be93-3a310566a3e2",
