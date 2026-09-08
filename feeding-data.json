@@ -1,7 +1,20 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-08T05:48:52.842Z",
+  "updatedAt": "2026-09-08T05:50:20.871Z",
   "pets": [
+    {
+      "id": "0865826f-79d8-4d0a-a6ee-926ab13c6346",
+      "name": "Corn RO Alb.",
+      "species": "Corn Snake",
+      "morphs": [
+        "Reverse Okeetee",
+        "Amelanistic (Albino)"
+      ],
+      "feedingPeriodDays": 7,
+      "feederType": "Mouse",
+      "feederWeightGrams": 40,
+      "createdAt": "2026-09-08T05:50:20.615Z"
+    },
     {
       "id": "21f1c20a-7825-4752-8c5a-d920c4658d50",
       "name": "Hog Conda Albino",
