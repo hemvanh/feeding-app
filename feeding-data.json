@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-10T17:22:47.596Z",
+  "updatedAt": "2026-09-10T17:23:49.153Z",
   "pets": [
     {
       "id": "0865826f-79d8-4d0a-a6ee-926ab13c6346",
@@ -133,6 +133,19 @@
       "createdAt": "2026-09-08T05:38:22.057Z",
       "coverAt": "1788845919322",
       "sex": "male"
+    },
+    {
+      "id": "7f5c79dd-54cf-44a7-b762-bd492216619c",
+      "name": "Tarantulas",
+      "species": "Tarantulas",
+      "morphs": [
+        "Normal / Wild Type"
+      ],
+      "sex": "unsexed",
+      "feedingPeriodDays": 5,
+      "feederType": "Dubia/Red Runner",
+      "feederWeightGrams": 10,
+      "createdAt": "2026-09-10T17:23:48.899Z"
     },
     {
       "id": "861eb30a-6a14-41ac-8013-55e520df20cb",
