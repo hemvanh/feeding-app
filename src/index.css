@@ -450,6 +450,11 @@ legend {
 .feeder-choices {
   align-items: center;
 }
+.feeder-choices select {
+  width: auto;
+  flex: 1 1 10rem;
+  min-width: 8rem;
+}
 .feeder-custom {
   width: auto;
   flex: 1;

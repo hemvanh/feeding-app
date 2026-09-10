@@ -16,6 +16,10 @@ export const SPECIES = [
 
 export type Species = (typeof SPECIES)[number]
 
+export function isPresetSpecies(value: string): value is Species {
+  return (SPECIES as readonly string[]).includes(value)
+}
+
 export const FEEDING_OUTCOMES = [
   'fed',
   'water-changed',
@@ -75,7 +79,7 @@ export type Weighing = {
 export type Pet = {
   id: string
   name: string
-  species: Species
+  species: string
   morphs: string[]
   sex?: PetSex
   feedingPeriodDays: number

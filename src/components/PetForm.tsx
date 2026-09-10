@@ -1,11 +1,11 @@
 import { useState, type FormEvent } from 'react'
-import { FEEDER_TYPES, PET_SEXES, SPECIES, isWaterChange, petSex, petSexLabel, type Pet, type PetSex, type Species } from '../types'
+import { FEEDER_TYPES, PET_SEXES, SPECIES, isPresetSpecies, isWaterChange, petSex, petSexLabel, type Pet, type PetSex } from '../types'
 import { ConfirmDialog } from './ConfirmDialog'
 import { MorphPicker } from './MorphPicker'
 
 type PetFields = {
   name: string
-  species: Species
+  species: string
   morphs: string[]
   sex: PetSex
   feedingPeriodDays: number
@@ -22,7 +22,7 @@ type PetFormProps = {
 
 export function PetForm({ initial, submitLabel, confirmSave = false, onSubmit }: PetFormProps) {
   const [name, setName] = useState(initial?.name ?? '')
-  const [species, setSpecies] = useState<Species>(initial?.species ?? 'Ball Python')
+  const [species, setSpecies] = useState(initial?.species ?? 'Ball Python')
   const [morphs, setMorphs] = useState<string[]>(initial?.morphs ?? [])
   const [sex, setSex] = useState<PetSex>(petSex(initial?.sex))
   const [period, setPeriod] = useState(String(initial?.feedingPeriodDays ?? 7))
@@ -39,8 +39,13 @@ export function PetForm({ initial, submitLabel, confirmSave = false, onSubmit }:
     const amount = Number(weight)
     const feeder = feederType.trim()
     const volume = isWaterChange(feeder)
+    const kind = species.trim()
     if (!trimmed) {
       setError('Give this pet a name.')
+      return null
+    }
+    if (!kind) {
+      setError('Choose a species, or type a custom one.')
       return null
     }
     if (!Number.isFinite(days) || days < 1 || days > 365) {
@@ -63,7 +68,7 @@ export function PetForm({ initial, submitLabel, confirmSave = false, onSubmit }:
     setError('')
     return {
       name: trimmed,
-      species,
+      species: kind,
       morphs,
       sex,
       feedingPeriodDays: Math.round(days),
@@ -96,23 +101,37 @@ export function PetForm({ initial, submitLabel, confirmSave = false, onSubmit }:
         Name
         <input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Noodle" />
       </label>
-      <label>
-        Species
-        <select
-          value={species}
-          onChange={(e) => {
-            const next = e.target.value as Species
-            setSpecies(next)
-            setMorphs([])
-          }}
-        >
-          {SPECIES.map((item) => (
-            <option key={item} value={item}>
-              {item}
-            </option>
-          ))}
-        </select>
-      </label>
+      <fieldset className="feeder-fieldset">
+        <legend>Species</legend>
+        <div className="choice-row feeder-choices">
+          <select
+            value={isPresetSpecies(species) ? species : ''}
+            onChange={(e) => {
+              setSpecies(e.target.value)
+              setMorphs([])
+            }}
+            aria-label="Species"
+          >
+            <option value="">Custom</option>
+            {SPECIES.map((item) => (
+              <option key={item} value={item}>
+                {item}
+              </option>
+            ))}
+          </select>
+          <input
+            className="feeder-custom"
+            value={isPresetSpecies(species) ? '' : species}
+            onChange={(e) => {
+              if (isPresetSpecies(species)) setMorphs([])
+              setSpecies(e.target.value)
+            }}
+            placeholder="Custom species"
+            aria-label="Custom species"
+          />
+        </div>
+        <span className="field-hint">Pick a listed species, or type any other one.</span>
+      </fieldset>
       <fieldset>
         <legend>Sex</legend>
         <div className="choice-row">

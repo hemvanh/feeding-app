@@ -1,4 +1,4 @@
-import type { Species } from '../types'
+import { isPresetSpecies, type Species } from '../types'
 
 function pack(names: string[]): string[] {
   const normal = 'Normal / Wild Type'
@@ -536,6 +536,7 @@ export const MORPHS_BY_SPECIES: Record<Species, string[]> = {
   'ComxFlo Snapping': pack([]),
 }
 
-export function morphsFor(species: Species): string[] {
-  return MORPHS_BY_SPECIES[species]
+export function morphsFor(species: string): string[] {
+  if (isPresetSpecies(species)) return MORPHS_BY_SPECIES[species]
+  return ['Normal / Wild Type']
 }

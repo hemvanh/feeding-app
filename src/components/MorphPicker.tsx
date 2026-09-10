@@ -1,9 +1,8 @@
 import { useMemo, useState } from 'react'
 import { morphsFor } from '../data/morphs'
-import type { Species } from '../types'
 
 type MorphPickerProps = {
-  species: Species
+  species: string
   value: string[]
   onChange: (morphs: string[]) => void
 }
@@ -60,7 +59,7 @@ export function MorphPicker({ species, value, onChange }: MorphPickerProps) {
               else addCustom()
             }
           }}
-          placeholder={`Search ${species} morphs`}
+          placeholder={species.trim() ? `Search ${species} morphs` : 'Search or add morphs'}
         />
         {query.trim() && !options.some((m) => m.toLowerCase() === query.trim().toLowerCase()) ? (
           <button type="button" className="ghost-btn" onClick={addCustom}>
