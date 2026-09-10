@@ -533,6 +533,42 @@ input, select, textarea {
 .badge.none, .pill.extended { background: #eef1ea; color: var(--muted); }
 
 .calendar { display: grid; gap: 10px; }
+.calendar.is-weeks {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  column-gap: 8px;
+  row-gap: 8px;
+  align-items: stretch;
+}
+.calendar.is-weeks .calendar-nav {
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 2px;
+}
+.calendar.is-weeks .calendar-nav-month {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 0.68rem;
+  font-weight: 650;
+  line-height: 1.15;
+  min-height: 0;
+}
+.calendar.is-weeks .calendar-nav .icon-btn svg {
+  transform: rotate(90deg);
+}
+.calendar.is-weeks .calendar-grid {
+  gap: 3px;
+}
+.calendar.is-weeks .calendar-cell {
+  min-height: 28px;
+}
+.calendar.is-weeks .calendar-legend {
+  grid-column: 1 / -1;
+}
 .calendar-nav {
   display: flex;
   justify-content: space-between;
@@ -1057,6 +1093,7 @@ button.feeder-prep-chip.very-late.is-targeted {
 @media (max-width: 640px) {
   .app { padding: 12px 12px 28px; }
   .calendar-cell { min-height: 40px; }
+  .calendar.is-weeks .calendar-cell { min-height: 28px; }
   input, select, textarea, .primary-btn, .ghost-btn, .danger-btn, .back-btn {
     min-height: 44px;
   }

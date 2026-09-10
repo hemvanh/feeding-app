@@ -33,6 +33,16 @@ export function startOfMonth(iso: string): Date {
   return date
 }
 
+export function startOfWeek(iso: string): string {
+  const date = parseISO(iso)
+  date.setDate(date.getDate() - date.getDay())
+  return formatISO(date)
+}
+
+export function shortMonthLabel(year: number, monthIndex: number): string {
+  return new Date(year, monthIndex, 1).toLocaleDateString(undefined, { month: 'short' })
+}
+
 export function monthLabel(year: number, monthIndex: number): string {
   return new Date(year, monthIndex, 1).toLocaleDateString(undefined, {
     month: 'long',

@@ -496,7 +496,7 @@ function HomePage() {
                   </p>
                 </div>
               </div>
-              <MiniCalendar cycles={cycles} nextDueDate={schedule.nextDueDate} />
+              <MiniCalendar compactWeeks cycles={cycles} nextDueDate={schedule.nextDueDate} />
               <div className="pet-card-actions">
                 <button type="button" className="primary-btn compact" onClick={() => go(`/pet/${pet.id}`)}>
                   {isWaterChange(pet.feederType) ? 'Change' : 'Feed'}
