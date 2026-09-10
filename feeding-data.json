@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-09T18:41:03.337Z",
+  "updatedAt": "2026-09-10T17:22:47.596Z",
   "pets": [
     {
       "id": "0865826f-79d8-4d0a-a6ee-926ab13c6346",
@@ -234,6 +234,20 @@
       "coverAt": "1788537682464",
       "feederType": "Mouse",
       "feederWeightGrams": 20
+    },
+    {
+      "id": "cc103ca8-2a98-47e3-a119-90840d55b82e",
+      "name": "LG - Rain Typhoon",
+      "species": "Leopard Gecko",
+      "morphs": [
+        "Raining Red Stripe",
+        "Typhoon"
+      ],
+      "sex": "unsexed",
+      "feedingPeriodDays": 5,
+      "feederType": "Dubia/Red Runner",
+      "feederWeightGrams": 50,
+      "createdAt": "2026-09-10T17:22:47.342Z"
     },
     {
       "id": "d666bfbb-c60f-45ed-a81a-c98780644532",
