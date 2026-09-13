@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-13T14:21:21.641Z",
+  "updatedAt": "2026-09-13T14:21:57.600Z",
   "pets": [
     {
       "id": "0865826f-79d8-4d0a-a6ee-926ab13c6346",
@@ -228,7 +228,7 @@
       "feederType": "Grass pellets",
       "feederWeightGrams": 200,
       "createdAt": "2026-09-05T14:37:25.248Z",
-      "coverAt": "1788619092122"
+      "coverAt": "1789309314561"
     },
     {
       "id": "c0ce8237-f2de-4c67-b218-ab4912755d2f",
