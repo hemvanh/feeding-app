@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-15T09:48:00.907Z",
+  "updatedAt": "2026-09-15T09:48:17.001Z",
   "pets": [
     {
       "id": "0865826f-79d8-4d0a-a6ee-926ab13c6346",
@@ -104,7 +104,7 @@
     },
     {
       "id": "570c580d-2418-481a-b85e-1c09bec829d4",
-      "name": "Burm. Hypo Granite",
+      "name": "Burm. Granite",
       "species": "Burmese Python",
       "morphs": [
         "Hypo",
@@ -114,7 +114,8 @@
       "createdAt": "2026-09-04T10:41:13.734Z",
       "coverAt": "1788537612970",
       "feederType": "Mouse",
-      "feederWeightGrams": 20
+      "feederWeightGrams": 20,
+      "sex": "unsexed"
     },
     {
       "id": "732d4167-464c-4698-89ea-6a7d61f79647",
