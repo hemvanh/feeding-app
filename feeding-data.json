@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-15T09:48:17.001Z",
+  "updatedAt": "2026-09-15T09:48:34.296Z",
   "pets": [
     {
       "id": "0865826f-79d8-4d0a-a6ee-926ab13c6346",
@@ -180,7 +180,7 @@
     },
     {
       "id": "899832e5-9475-4372-b7d3-df1660958960",
-      "name": "Chép Phi Tần",
+      "name": "Chép",
       "species": "Carp Fish",
       "morphs": [
         "Butterfly"
@@ -189,7 +189,8 @@
       "feederType": "Water Change",
       "feederWeightGrams": 250,
       "createdAt": "2026-09-05T13:39:28.800Z",
-      "coverAt": "1789309352387"
+      "coverAt": "1789309352387",
+      "sex": "unsexed"
     },
     {
       "id": "9b599211-8bff-4415-84ed-25a77714e443",
