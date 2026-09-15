@@ -11,8 +11,9 @@ import { WeightTracker } from './components/WeightTracker'
 import { SyncBar } from './components/SyncBar'
 import { db, newId } from './db'
 import { deleteGitHubFile, isGitHubConnected } from './github'
+import { getSyncStatus, subscribeSync } from './sync'
 import { useAllFeedings, useFeedings, usePet, usePets } from './hooks/useDb'
-import { feederSummary, isWaterChange, latestWeighing, formatGrams, outcomeLabel, type FeedingEvent, type FeedingOutcome, type Pet } from './types'
+import { FEEDER_TYPES, feederAmountUnit, feederSummary, isWaterChange, latestWeighing, formatGrams, outcomeLabel, type FeedingEvent, type FeedingOutcome, type Pet } from './types'
 import { coverPhotoPath } from './utils/coverPhoto'
 import { petIdFromQrText } from './utils/petQr'
 import { qrInkForPets, type QrInk } from './utils/qrColors'
@@ -73,6 +74,15 @@ function AppShell({
   onPrintQrs?: () => void
   showSync?: boolean
 }) {
+  const [, setSyncTick] = useState(0)
+  const githubOk = isGitHubConnected() && getSyncStatus().connected
+  const [syncOpen, setSyncOpen] = useState(() => !isGitHubConnected())
+
+  useEffect(() => subscribeSync(() => setSyncTick((n) => n + 1)), [])
+  useEffect(() => {
+    setSyncOpen(!githubOk)
+  }, [githubOk])
+
   return (
     <div className="app">
       <header className="topbar">
@@ -94,8 +104,14 @@ function AppShell({
           <span className="spacer" />
         ) : (
           <div className="topbar-actions">
-            {onScan ? (
-              <button type="button" className="primary-btn compact scan-btn" aria-label="Scan pet QR" onClick={onScan}>
+            {showSync ? (
+              <button
+                type="button"
+                className={`primary-btn compact scan-btn${syncOpen ? ' on' : ''}`}
+                aria-label={syncOpen ? 'Hide GitHub JSON' : 'Show GitHub JSON'}
+                aria-pressed={syncOpen}
+                onClick={() => setSyncOpen((value) => !value)}
+              >
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                   <path
                     fill="none"
@@ -103,9 +119,8 @@ function AppShell({
                     strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    d="M7 3H4v3M17 3h3v3M7 21H4v-3M20 18v3h-3"
+                    d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"
                   />
-                  <path fill="currentColor" d="M6 6h5v5H6V6Zm1.5 1.5v2h2v-2h-2Zm5.5-1.5h5v5h-5V6Zm1.5 1.5v2h2v-2h-2ZM6 13h5v5H6v-5Zm1.5 1.5v2h2v-2h-2ZM13 13h2v2h-2v-2Zm3 0h2v2h-2v-2Zm-3 3h2v2h-2v-2Zm3 0h2v2h-2v-2Z" />
                 </svg>
               </button>
             ) : null}
@@ -129,13 +144,28 @@ function AppShell({
                 </svg>
               </button>
             ) : null}
-            <button type="button" className="primary-btn compact" onClick={() => go('/new')}>
-              New pet
+            {onScan ? (
+              <button type="button" className="primary-btn compact scan-btn" aria-label="Scan pet QR" onClick={onScan}>
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M7 3H4v3M17 3h3v3M7 21H4v-3M20 18v3h-3"
+                  />
+                  <path fill="currentColor" d="M6 6h5v5H6V6Zm1.5 1.5v2h2v-2h-2Zm5.5-1.5h5v5h-5V6Zm1.5 1.5v2h2v-2h-2ZM6 13h5v5H6v-5Zm1.5 1.5v2h2v-2h-2ZM13 13h2v2h-2v-2Zm3 0h2v2h-2v-2Zm-3 3h2v2h-2v-2Zm3 0h2v2h-2v-2Z" />
+                </svg>
+              </button>
+            ) : null}
+            <button type="button" className="primary-btn compact" aria-label="New pet" onClick={() => go('/new')}>
+              New
             </button>
           </div>
         )}
       </header>
-      {showSync ? <SyncBar /> : null}
+      {showSync && syncOpen ? <SyncBar /> : null}
       <main>{children}</main>
     </div>
   )
@@ -186,26 +216,53 @@ function HomePage() {
       })
   }, [events, filter, pets])
 
-  const prepItems = useMemo(() => {
+  const prepGroups = useMemo(() => {
     if (!pets || !events) return []
-    const rank = { 'very-late': 0, late: 1, today: 2 }
-    return pets
-      .flatMap((pet) => {
-        const petEvents = events.filter((event) => event.petId === pet.id)
-        const schedule = computeSchedule(pet, petEvents)
-        if (wasFedToday(schedule.lastFedDate)) return []
-        const urgency = prepUrgency(schedule.nextDueDate)
-        if (!urgency) return []
-        const feed = feederSummary(pet).replace(' · ', ' ')
-        return [{
-          petId: pet.id,
-          label: feed ? `${pet.name} · ${feed}` : pet.name,
-          urgency,
-        }]
-      })
+    const urgencyRank = { 'very-late': 0, late: 1, today: 2 }
+    const typeRank = (type: string) => {
+      const index = FEEDER_TYPES.findIndex((item) => item.toLowerCase() === type.toLowerCase())
+      if (index >= 0) return index
+      if (type === 'Unspecified') return 999
+      return 50
+    }
+    const buckets = new Map<string, {
+      key: string
+      label: string
+      type: string
+      items: { petId: string; name: string; label: string; urgency: 'today' | 'late' | 'very-late' }[]
+    }>()
+    for (const pet of pets) {
+      const petEvents = events.filter((event) => event.petId === pet.id)
+      const schedule = computeSchedule(pet, petEvents)
+      if (wasFedToday(schedule.lastFedDate)) continue
+      const urgency = prepUrgency(schedule.nextDueDate)
+      if (!urgency) continue
+      const type = pet.feederType?.trim() || 'Unspecified'
+      const key = type.toLowerCase()
+      const grams = typeof pet.feederWeightGrams === 'number' && pet.feederWeightGrams > 0 ? pet.feederWeightGrams : 0
+      const amount = grams ? `${grams}${feederAmountUnit(type)}` : ''
+      const item = {
+        petId: pet.id,
+        name: pet.name,
+        label: amount ? `${pet.name} · ${amount}` : pet.name,
+        urgency,
+      }
+      const current = buckets.get(key)
+      if (current) current.items.push(item)
+      else buckets.set(key, { key, label: type, type, items: [item] })
+    }
+    return [...buckets.values()]
+      .map((group) => ({
+        ...group,
+        items: [...group.items].sort((a, b) => {
+          if (urgencyRank[a.urgency] !== urgencyRank[b.urgency]) return urgencyRank[a.urgency] - urgencyRank[b.urgency]
+          return a.name.localeCompare(b.name)
+        }),
+      }))
       .sort((a, b) => {
-        if (rank[a.urgency] !== rank[b.urgency]) return rank[a.urgency] - rank[b.urgency]
-        return a.label.localeCompare(b.label)
+        const rank = typeRank(a.type) - typeRank(b.type)
+        if (rank !== 0) return rank
+        return a.type.localeCompare(b.type)
       })
   }, [events, pets])
 
@@ -240,7 +297,7 @@ function HomePage() {
     const el = prepRef.current
     if (!el || prepDocked) return
     setPrepHeight(el.getBoundingClientRect().height)
-  }, [prepDocked, prepItems, showPrep])
+  }, [prepDocked, prepGroups, showPrep])
 
   function measureDockedPrepHeight(bar: HTMLElement): number {
     if (bar.classList.contains('is-docked')) return bar.getBoundingClientRect().height
@@ -253,7 +310,8 @@ function HomePage() {
     if (!probe.querySelector('.feeder-prep-top')) {
       const bump = document.createElement('span')
       bump.className = 'primary-btn compact feeder-prep-top'
-      probe.appendChild(bump)
+      const head = probe.querySelector('.feeder-prep-head')
+      ;(head ?? probe).appendChild(bump)
     }
     document.body.appendChild(probe)
     const height = probe.getBoundingClientRect().height
@@ -391,7 +449,7 @@ function HomePage() {
         />
       ) : null}
       {showPrep ? (
-        <>
+        <div className="home-prep">
           <div ref={prepSentinelRef} className="feeder-prep-sentinel" aria-hidden="true" />
           {prepDocked ? <div className="feeder-prep-spacer" style={{ height: prepHeight }} aria-hidden="true" /> : null}
           <section
@@ -400,46 +458,59 @@ function HomePage() {
             aria-label="Feeders to prepare"
           >
           <div className="feeder-prep-body">
-            <h2>Prepare for overdue and due today</h2>
-            {prepItems.length === 0 ? (
+            <div className="feeder-prep-head">
+              <h2>Prepare for overdue and due today</h2>
+              {prepDocked ? (
+                <button
+                  type="button"
+                  className="primary-btn compact feeder-prep-top"
+                  aria-label="Scroll to top"
+                  onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.4"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                  d="M6 14.5 12 8.5 18 14.5"
+                />
+                  </svg>
+                </button>
+              ) : null}
+            </div>
+            {prepGroups.length === 0 ? (
               <p className="muted">Nothing to thaw right now.</p>
             ) : (
-              <div className="feeder-prep-chips">
-                {prepItems.map((item) => (
-                  <button
-                    key={item.petId}
-                    id={`prep-chip-${item.petId}`}
-                    type="button"
-                    className={`feeder-prep-chip ${item.urgency}`}
-                    onClick={() => scrollToPetCard(item.petId)}
-                  >
-                    {item.label}
-                  </button>
+              <div className="feeder-prep-groups">
+                {[0, 1].map((col) => (
+                  <div key={col} className="feeder-prep-col">
+                    {prepGroups.filter((_, index) => index % 2 === col).map((group) => (
+                      <div key={group.key} className="feeder-prep-group">
+                        <h3>{group.label}</h3>
+                        <div className="feeder-prep-chips">
+                          {group.items.map((item) => (
+                            <button
+                              key={item.petId}
+                              id={`prep-chip-${item.petId}`}
+                              type="button"
+                              className={`feeder-prep-chip ${item.urgency}`}
+                              onClick={() => scrollToPetCard(item.petId)}
+                            >
+                              {item.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 ))}
               </div>
             )}
           </div>
-          {prepDocked ? (
-            <button
-              type="button"
-              className="primary-btn compact feeder-prep-top"
-              aria-label="Scroll to top"
-              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-            >
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.4"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M6 14.5 12 8.5 18 14.5"
-                />
-              </svg>
-            </button>
-          ) : null}
-        </section>
-        </>
+          </section>
+        </div>
       ) : null}
       {pets === undefined || events === undefined ? (
         <section className="empty">
