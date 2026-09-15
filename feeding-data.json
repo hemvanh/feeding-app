@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-15T09:48:34.296Z",
+  "updatedAt": "2026-09-15T09:50:32.701Z",
   "pets": [
     {
       "id": "0865826f-79d8-4d0a-a6ee-926ab13c6346",
@@ -127,7 +127,7 @@
       "feedingPeriodDays": 5,
       "createdAt": "2026-09-04T08:21:53.488Z",
       "coverAt": "1788543328703",
-      "feederType": "Dubia",
+      "feederType": "Dubia/Red Runner",
       "feederWeightGrams": 10,
       "sex": "male",
       "weighings": []
