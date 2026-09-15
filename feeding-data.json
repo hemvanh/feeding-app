@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-15T09:47:41.739Z",
+  "updatedAt": "2026-09-15T09:48:00.907Z",
   "pets": [
     {
       "id": "0865826f-79d8-4d0a-a6ee-926ab13c6346",
@@ -220,7 +220,7 @@
     },
     {
       "id": "abb47286-0a34-4490-9d1f-e51d7036c327",
-      "name": "Sulcata/Iguana",
+      "name": "Sul./Igu.",
       "species": "Iguana",
       "morphs": [
         "High Red"
@@ -229,7 +229,8 @@
       "feederType": "Grass pellets",
       "feederWeightGrams": 200,
       "createdAt": "2026-09-05T14:37:25.248Z",
-      "coverAt": "1789309314561"
+      "coverAt": "1789309314561",
+      "sex": "unsexed"
     },
     {
       "id": "c0ce8237-f2de-4c67-b218-ab4912755d2f",
