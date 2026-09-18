@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-18T07:11:19.815Z",
+  "updatedAt": "2026-09-18T15:19:55.393Z",
   "pets": [
     {
       "id": "0865826f-79d8-4d0a-a6ee-926ab13c6346",
@@ -54,7 +54,7 @@
         "Okeetee"
       ],
       "sex": "unsexed",
-      "feedingPeriodDays": 7,
+      "feedingPeriodDays": 4,
       "feederType": "Mouse",
       "feederWeightGrams": 5,
       "createdAt": "2026-09-13T14:21:07.537Z",
