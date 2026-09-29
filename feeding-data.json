@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-29T13:06:08.208Z",
+  "updatedAt": "2026-09-29T13:06:42.539Z",
   "pets": [
     {
       "id": "0865826f-79d8-4d0a-a6ee-926ab13c6346",
@@ -101,21 +101,6 @@
       "createdAt": "2026-09-08T05:42:54.210Z",
       "coverAt": "1788846231549",
       "sex": "female"
-    },
-    {
-      "id": "570c580d-2418-481a-b85e-1c09bec829d4",
-      "name": "Burm. Granite",
-      "species": "Burmese Python",
-      "morphs": [
-        "Hypo",
-        "Granite"
-      ],
-      "feedingPeriodDays": 7,
-      "createdAt": "2026-09-04T10:41:13.734Z",
-      "coverAt": "1788537612970",
-      "feederType": "Mouse",
-      "feederWeightGrams": 20,
-      "sex": "unsexed"
     },
     {
       "id": "732d4167-464c-4698-89ea-6a7d61f79647",
@@ -494,15 +479,6 @@
       "createdAt": "2026-09-08T19:40:41.458Z"
     },
     {
-      "id": "37297ce4-81aa-4d03-9119-845b69cea582",
-      "petId": "570c580d-2418-481a-b85e-1c09bec829d4",
-      "date": "2026-09-15",
-      "note": "",
-      "outcome": "refused",
-      "extensionDays": 1,
-      "createdAt": "2026-09-15T19:01:34.872Z"
-    },
-    {
       "id": "3a9e4fba-3969-4b41-8e7d-051e644b8cbd",
       "petId": "d7fe6d29-0b97-435f-95a0-dfa591590e68",
       "date": "2026-09-05",
@@ -537,15 +513,6 @@
       "outcome": "fed",
       "extensionDays": 0,
       "createdAt": "2026-09-07T03:43:24.035Z"
-    },
-    {
-      "id": "3ff50437-e6b0-43d9-82b1-3fe4ae7d7eb5",
-      "petId": "570c580d-2418-481a-b85e-1c09bec829d4",
-      "date": "2026-09-07",
-      "note": "",
-      "outcome": "refused",
-      "extensionDays": 1,
-      "createdAt": "2026-09-07T03:43:59.045Z"
     },
     {
       "id": "4205b662-a87c-4139-8acb-ada164f873d3",
@@ -629,15 +596,6 @@
       "createdAt": "2026-09-22T16:32:41.785Z"
     },
     {
-      "id": "68fb0cc7-3a50-4b89-9a40-826641f81c25",
-      "petId": "570c580d-2418-481a-b85e-1c09bec829d4",
-      "date": "2026-08-29",
-      "note": "",
-      "outcome": "fed",
-      "extensionDays": 0,
-      "createdAt": "2026-09-04T10:46:47.429Z"
-    },
-    {
       "id": "6aed533b-63b8-4115-b771-f0fa4f106df2",
       "petId": "ddbf5e8b-9b17-4fd6-8b14-f3acbb9efb61",
       "date": "2026-09-21",
@@ -654,15 +612,6 @@
       "outcome": "fed",
       "extensionDays": 0,
       "createdAt": "2026-09-09T07:36:13.309Z"
-    },
-    {
-      "id": "6d8bcd88-c706-43ad-93aa-6e827bf178c8",
-      "petId": "570c580d-2418-481a-b85e-1c09bec829d4",
-      "date": "2026-09-19",
-      "note": "",
-      "outcome": "refused",
-      "extensionDays": 2,
-      "createdAt": "2026-09-18T18:17:55.317Z"
     },
     {
       "id": "75de4e7a-6c0b-4132-8a12-d3f6491b55fe",
@@ -881,15 +830,6 @@
       "createdAt": "2026-09-27T17:51:31.884Z"
     },
     {
-      "id": "d7b541e4-badb-4656-82ab-7414e29c24b7",
-      "petId": "570c580d-2418-481a-b85e-1c09bec829d4",
-      "date": "2026-09-08",
-      "note": "28g",
-      "outcome": "fed",
-      "extensionDays": 0,
-      "createdAt": "2026-09-07T17:34:55.259Z"
-    },
-    {
       "id": "db219eb4-49b3-44ce-b65a-6e0a282bb0aa",
       "petId": "2617b4a8-d538-4874-b46d-cc72e8def7dd",
       "date": "2026-09-22",
@@ -924,15 +864,6 @@
       "outcome": "fed",
       "extensionDays": 0,
       "createdAt": "2026-09-13T18:28:02.868Z"
-    },
-    {
-      "id": "e68a28fe-45f8-4072-9a26-d93d671c0f1c",
-      "petId": "570c580d-2418-481a-b85e-1c09bec829d4",
-      "date": "2026-09-22",
-      "note": "",
-      "outcome": "refused",
-      "extensionDays": 1,
-      "createdAt": "2026-09-21T20:02:44.315Z"
     },
     {
       "id": "e7f866c1-5947-4e9f-b181-e200d23ac1bd",
