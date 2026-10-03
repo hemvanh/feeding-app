@@ -13,7 +13,7 @@ import { db, newId } from './db'
 import { deleteGitHubFile, isGitHubConnected } from './github'
 import { getSyncStatus, subscribeSync } from './sync'
 import { useAllFeedings, useFeedings, usePet, usePets } from './hooks/useDb'
-import { FEEDER_TYPES, feederAmountUnit, feederSummary, isWaterChange, latestWeighing, formatGrams, outcomeLabel, type FeedingEvent, type FeedingOutcome, type Pet } from './types'
+import { FEEDER_TYPES, feederAmountUnit, feederSummary, isWaterChange, latestWeighing, formatGrams, outcomeLabel, resultTagOutcome, type FeedingEvent, type FeedingOutcome, type Pet } from './types'
 import { coverPhotoPath } from './utils/coverPhoto'
 import { petIdFromQrText } from './utils/petQr'
 import { qrInkForPets, type QrInk } from './utils/qrColors'
@@ -63,6 +63,7 @@ function AppShell({
   title,
   children,
   back,
+  actions,
   onScan,
   onPrintQrs,
   showSync,
@@ -70,6 +71,7 @@ function AppShell({
   title?: string
   children: ReactNode
   back?: string
+  actions?: ReactNode
   onScan?: () => void
   onPrintQrs?: () => void
   showSync?: boolean
@@ -101,7 +103,7 @@ function AppShell({
         )}
         {title ? <h1>{title}</h1> : <span className="topbar-center" />}
         {back ? (
-          <span className="spacer" />
+          actions ?? <span className="spacer" />
         ) : (
           <div className="topbar-actions">
             {showSync ? (
@@ -295,8 +297,19 @@ function HomePage() {
 
   useLayoutEffect(() => {
     const el = prepRef.current
-    if (!el || prepDocked) return
-    setPrepHeight(el.getBoundingClientRect().height)
+    if (!el) return
+    const measure = () => {
+      const next = el.getBoundingClientRect().height
+      setPrepHeight((prev) => (Math.abs(prev - next) < 0.5 ? prev : next))
+    }
+    measure()
+    if (!prepDocked) return
+    window.addEventListener('resize', measure)
+    window.visualViewport?.addEventListener('resize', measure)
+    return () => {
+      window.removeEventListener('resize', measure)
+      window.visualViewport?.removeEventListener('resize', measure)
+    }
   }, [prepDocked, prepGroups, showPrep])
 
   function measureDockedPrepHeight(bar: HTMLElement): number {
@@ -670,6 +683,10 @@ function PetPage({ id }: { id: string }) {
   const [feedDate, setFeedDate] = useState(todayISO)
   const [pendingDelete, setPendingDelete] = useState<string | null>(null)
 
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0)
+  }, [id])
+
   if (!loaded) {
     return (
       <AppShell title="Pet" back="/">
@@ -693,6 +710,7 @@ function PetPage({ id }: { id: string }) {
     note: string
     outcome: FeedingOutcome
     extensionDays: number
+    tags?: string[]
   }) {
     const event: FeedingEvent = {
       id: newId(),
@@ -702,21 +720,27 @@ function PetPage({ id }: { id: string }) {
       outcome: data.outcome,
       extensionDays: data.extensionDays,
       createdAt: new Date().toISOString(),
+      ...(data.tags?.length ? { tags: data.tags } : {}),
     }
     await db.feedings.add(event)
   }
 
   return (
-    <AppShell title={pet.name} back="/">
-      <section className="panel">
+    <AppShell
+      title={pet.name}
+      back="/"
+      actions={
         <div className="tabs">
           <button type="button" className={tab === 'feed' ? 'on' : ''} onClick={() => setTab('feed')}>
             Feed !
           </button>
           <button type="button" className={tab === 'extend' ? 'on' : ''} onClick={() => setTab('extend')}>
-            Extend cycle
+            Extend
           </button>
         </div>
+      }
+    >
+      <section className="panel">
         {tab === 'feed' ? (
           <FeedingForm
             date={feedDate}
@@ -744,6 +768,7 @@ function PetPage({ id }: { id: string }) {
 
       <section className="panel">
         <MiniCalendar
+          compactWeeks
           cycles={buildCycles(pet, events)}
           nextDueDate={schedule.nextDueDate}
           selectedDate={feedDate}
@@ -779,14 +804,21 @@ function PetPage({ id }: { id: string }) {
               <li key={event.id}>
                 <div>
                   <strong>{formatPretty(event.date)}</strong>
-                  <span className={`pill ${event.outcome}`}>{outcomeLabel(event.outcome)}</span>
+                  {(event.tags?.length ? event.tags : [outcomeLabel(event.outcome)]).map((tag) => {
+                    const standard = resultTagOutcome(tag)
+                    return (
+                      <span key={tag} className={`pill ${standard ?? 'custom'}`}>
+                        {tag}
+                      </span>
+                    )
+                  })}
                 </div>
                 {event.extensionDays > 0 ? (
                   <p className="muted">
                     Extended by {event.extensionDays} day{event.extensionDays === 1 ? '' : 's'}
                   </p>
                 ) : null}
-                {event.note ? <p>{event.note}</p> : null}
+                {event.tags?.length ? null : event.note ? <p>{event.note}</p> : null}
                 <button
                   type="button"
                   className="text-btn"

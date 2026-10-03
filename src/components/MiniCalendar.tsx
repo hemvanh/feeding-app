@@ -197,6 +197,16 @@ export function MiniCalendar({
             <i className="swatch due" /> Next feeding
           </span>
         </div>
+        {onSelectDate ? (
+          <div className="calendar-legend marks">
+            <span>
+              <i className="mark today" /> Today
+            </span>
+            <span>
+              <i className="mark selected" /> Selected
+            </span>
+          </div>
+        ) : null}
       </div>
     )
   }
@@ -238,9 +248,6 @@ export function MiniCalendar({
             <i className="mark selected" /> Selected
           </span>
         </div>
-      ) : null}
-      {onSelectDate ? (
-        <p className="calendar-hint">Tap any day to set the feeding date, including older days you forgot to log.</p>
       ) : null}
     </div>
   )

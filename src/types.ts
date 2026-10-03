@@ -36,10 +36,38 @@ export function isSuccessfulOutcome(outcome: FeedingOutcome): boolean {
 
 export function outcomeLabel(outcome: FeedingOutcome): string {
   if (outcome === 'fed') return 'Ate'
-  if (outcome === 'water-changed') return 'Water Changed'
+  if (outcome === 'water-changed') return 'W. Changed'
   if (outcome === 'refused') return 'Refused'
-  if (outcome === 'regurgitated') return 'Regurgitated'
+  if (outcome === 'regurgitated') return 'Regurg.'
   return 'Extended'
+}
+
+export const RESULT_TAGS = [
+  { outcome: 'fed', label: 'Ate' },
+  { outcome: 'refused', label: 'Refused' },
+  { outcome: 'regurgitated', label: 'Regurg.' },
+  { outcome: 'water-changed', label: 'W. Changed' },
+] as const
+
+const RESULT_TAG_ALIASES: Record<string, FeedingOutcome> = {
+  ate: 'fed',
+  refused: 'refused',
+  regurgitated: 'regurgitated',
+  'regurg.': 'regurgitated',
+  'water changed': 'water-changed',
+  'w. changed': 'water-changed',
+}
+
+export function resultTagOutcome(label: string): FeedingOutcome | null {
+  return RESULT_TAG_ALIASES[label.trim().toLowerCase()] ?? null
+}
+
+export function outcomeFromResultTags(labels: string[]): FeedingOutcome {
+  const selected = new Set(labels.map((label) => resultTagOutcome(label)).filter((outcome) => outcome !== null))
+  if (selected.has('regurgitated')) return 'regurgitated'
+  if (selected.has('refused')) return 'refused'
+  if (selected.has('water-changed')) return 'water-changed'
+  return 'fed'
 }
 
 export const FEEDER_TYPES = ['Mouse', 'Rat', 'Chicken', 'Water Change'] as const
@@ -116,6 +144,7 @@ export type FeedingEvent = {
   outcome: FeedingOutcome
   extensionDays: number
   createdAt: string
+  tags?: string[]
 }
 
 export function feederSummary(pet: Pick<Pet, 'feederType' | 'feederWeightGrams'>): string {

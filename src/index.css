@@ -454,6 +454,9 @@ input, select, textarea {
   gap: 4px;
   margin: 0;
 }
+.selected-date-line {
+  white-space: nowrap;
+}
 
 .field-hint, .calendar-hint {
   color: var(--muted);
@@ -550,7 +553,8 @@ input, select, textarea {
 .calendar.is-weeks .calendar-cell {
   min-height: 28px;
 }
-.calendar.is-weeks .calendar-legend {
+.calendar.is-weeks .calendar-legend,
+.calendar.is-weeks .calendar-hint {
   grid-column: 1 / -1;
 }
 .calendar-nav {
@@ -715,6 +719,38 @@ button.calendar-cell {
   border-color: var(--green-2);
 }
 .choice input { display: none; }
+.tag-field {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 8px;
+  background: #fff;
+}
+.tag-field:focus-within {
+  border-color: var(--green);
+}
+.tag-field input {
+  width: auto;
+  flex: 1 1 8rem;
+  min-width: 7rem;
+  border: 0;
+  padding: 4px 6px;
+  background: transparent;
+}
+.tag-field input:focus { outline: none; }
+.custom-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.pill.custom {
+  background: #eef1ea;
+  color: var(--ink);
+  font-weight: 650;
+}
 .morph-picker {
   display: grid;
   gap: 12px;
@@ -739,6 +775,11 @@ button.calendar-cell {
 
 .tabs {
   margin-bottom: 16px;
+}
+.topbar .tabs {
+  margin-bottom: 0;
+  justify-content: flex-end;
+  flex-wrap: nowrap;
 }
 .tabs button {
   border: 0;
@@ -986,6 +1027,12 @@ button.feeder-prep-chip.very-late.is-targeted {
   z-index: 30;
   width: auto;
   max-width: none;
+  max-height: 39vh;
+  max-height: 39dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--green) 82%, white) transparent;
   margin: 0;
   border-radius: 0;
   padding: 12px max(14px, env(safe-area-inset-right, 0px)) 12px max(14px, env(safe-area-inset-left, 0px));
@@ -994,6 +1041,26 @@ button.feeder-prep-chip.very-late.is-targeted {
   box-shadow:
     0 12px 28px rgba(28, 42, 29, 0.14),
     inset 0 1px 0 rgba(255, 255, 255, 0.72);
+}
+.feeder-prep.is-docked .feeder-prep-body {
+  min-height: 0;
+}
+.feeder-prep.is-docked::-webkit-scrollbar {
+  width: 8px;
+}
+.feeder-prep.is-docked::-webkit-scrollbar-track {
+  background: transparent;
+}
+.feeder-prep.is-docked::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--green) 82%, white);
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background-clip: content-box;
+}
+.feeder-prep.is-docked::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
 }
 .feeder-prep.is-docked .feeder-prep-head {
   position: relative;
@@ -1164,7 +1231,7 @@ button.feeder-prep-chip.very-late.is-targeted {
     --line: #2c3a2d;
     --shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
   }
-  input, select, textarea, .chip, .morph-option, .choice {
+  input, select, textarea, .chip, .morph-option, .choice, .tag-field {
     background: #121812;
     border-color: #334236;
     color: var(--ink);
@@ -1175,6 +1242,10 @@ button.feeder-prep-chip.very-late.is-targeted {
     box-shadow:
       0 12px 28px rgba(0, 0, 0, 0.38),
       inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    scrollbar-color: #8fd4a4 transparent;
+  }
+  .feeder-prep.is-docked::-webkit-scrollbar-thumb {
+    background: #8fd4a4;
   }
   .choice.on {
     background: var(--green);
