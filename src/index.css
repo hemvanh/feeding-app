@@ -1256,6 +1256,7 @@ button.feeder-prep-chip.very-late.is-targeted {
   .cover-thumb,
   .cover-photo-img { background: #152016; }
   .ghost-btn, .icon-btn, .tabs button { background: #243328; }
+  .pill.custom { background: #243328; color: var(--ink); }
   .tabs button.on { background: var(--green); color: #fff; }
   .scan-btn.on { background: var(--green); color: #fff; border-color: #8fd4a4; }
 }
