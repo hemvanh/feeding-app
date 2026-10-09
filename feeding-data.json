@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-05T17:55:58.299Z",
+  "updatedAt": "2026-10-09T08:26:20.347Z",
   "pets": [
     {
       "id": "0865826f-79d8-4d0a-a6ee-926ab13c6346",
@@ -409,6 +409,18 @@
       "outcome": "fed",
       "extensionDays": 0,
       "createdAt": "2026-09-28T16:40:33.142Z"
+    },
+    {
+      "id": "18b4d879-62c0-4f64-bfb4-68519a7f3edb",
+      "petId": "abb47286-0a34-4490-9d1f-e51d7036c327",
+      "date": "2026-10-09",
+      "note": "",
+      "outcome": "fed",
+      "extensionDays": 0,
+      "createdAt": "2026-10-09T08:26:20.083Z",
+      "tags": [
+        "Ate"
+      ]
     },
     {
       "id": "1c740504-6cf9-438a-a0fc-772908419e0e",
