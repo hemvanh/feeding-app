@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-10T17:01:27.092Z",
+  "updatedAt": "2026-10-10T17:03:27.304Z",
   "pets": [
     {
       "id": "0865826f-79d8-4d0a-a6ee-926ab13c6346",
@@ -219,6 +219,17 @@
       "createdAt": "2026-09-05T14:37:25.248Z",
       "coverAt": "1789309314561",
       "sex": "unsexed"
+    },
+    {
+      "id": "beaa192d-c55d-4ced-b24e-dc2ad0888679",
+      "name": "Pacman Ornata",
+      "species": "Pacman Frog",
+      "morphs": [],
+      "sex": "male",
+      "feedingPeriodDays": 5,
+      "feederType": "Fuzzy/Fish",
+      "feederWeightGrams": 10,
+      "createdAt": "2026-10-10T17:03:27.049Z"
     },
     {
       "id": "c0ce8237-f2de-4c67-b218-ab4912755d2f",
