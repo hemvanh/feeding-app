@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-10T17:03:27.304Z",
+  "updatedAt": "2026-10-10T17:03:47.506Z",
   "pets": [
     {
       "id": "0865826f-79d8-4d0a-a6ee-926ab13c6346",
@@ -229,7 +229,8 @@
       "feedingPeriodDays": 5,
       "feederType": "Fuzzy/Fish",
       "feederWeightGrams": 10,
-      "createdAt": "2026-10-10T17:03:27.049Z"
+      "createdAt": "2026-10-10T17:03:27.049Z",
+      "coverAt": "1791651824629"
     },
     {
       "id": "c0ce8237-f2de-4c67-b218-ab4912755d2f",
