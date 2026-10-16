@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-16T15:13:36.411Z",
+  "updatedAt": "2026-10-16T15:13:48.468Z",
   "pets": [
     {
       "id": "0865826f-79d8-4d0a-a6ee-926ab13c6346",
@@ -84,9 +84,10 @@
       ],
       "feedingPeriodDays": 4,
       "feederType": "Mouse",
-      "feederWeightGrams": 5,
+      "feederWeightGrams": 10,
       "createdAt": "2026-09-07T17:47:16.219Z",
-      "coverAt": "1789309202902"
+      "coverAt": "1789309202902",
+      "sex": "unsexed"
     },
     {
       "id": "4697b090-0321-40f0-afc5-2db6da8ac989",
