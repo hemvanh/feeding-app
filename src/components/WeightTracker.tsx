@@ -33,7 +33,7 @@ function growthLabel(current: Weighing, previous: Weighing | undefined): string 
   return `${sign}${formatGrams(delta)} g`
 }
 
-export function WeightTracker({ pet }: { pet: Pet }) {
+export function WeightTracker({ pet, readOnly = false }: { pet: Pet; readOnly?: boolean }) {
   const [date, setDate] = useState(todayISO())
   const [grams, setGrams] = useState('')
   const [error, setError] = useState('')
@@ -75,6 +75,7 @@ export function WeightTracker({ pet }: { pet: Pet }) {
   return (
     <div className="weight-tracker">
       <h2>Weight tracking</h2>
+      {readOnly ? null : (
       <form className="stack weight-add" onSubmit={handleAdd}>
         <label>
           Weighing date
@@ -95,8 +96,9 @@ export function WeightTracker({ pet }: { pet: Pet }) {
           Add weighing
         </button>
       </form>
+      )}
       {newestFirst.length === 0 ? (
-        <p className="muted">No weighings yet. Add a weight and date to track growth.</p>
+        <p className="muted">{readOnly ? 'No weighings yet.' : 'No weighings yet. Add a weight and date to track growth.'}</p>
       ) : (
         <ul className="history weight-log">
           {newestFirst.map((item, index) => {
@@ -109,9 +111,11 @@ export function WeightTracker({ pet }: { pet: Pet }) {
                   <span>{formatGrams(item.grams)} g</span>
                 </div>
                 {growth ? <p className="muted">{growth}</p> : <p className="muted">First record</p>}
+                {readOnly ? null : (
                 <button type="button" className="text-btn" onClick={() => setPendingDelete(item)}>
                   Remove
                 </button>
+                )}
               </li>
             )
           })}

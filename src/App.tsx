@@ -13,7 +13,7 @@ import { db, newId } from './db'
 import { deleteGitHubFile, isGitHubConnected } from './github'
 import { getSyncStatus, subscribeSync } from './sync'
 import { useAllFeedings, useFeedings, usePet, usePets } from './hooks/useDb'
-import { FEEDER_TYPES, feederAmountUnit, feederSummary, isWaterChange, latestWeighing, formatGrams, outcomeLabel, resultTagOutcome, type FeedingEvent, type FeedingOutcome, type Pet } from './types'
+import { FEEDER_TYPES, feederAmountUnit, feederSummary, isWaterChange, latestWeighing, formatGrams, outcomeLabel, petSexLabel, resultTagOutcome, type FeedingEvent, type FeedingOutcome, type Pet } from './types'
 import { coverPhotoPath } from './utils/coverPhoto'
 import { petIdFromQrText } from './utils/petQr'
 import { qrInkForPets, type QrInk } from './utils/qrColors'
@@ -25,6 +25,7 @@ type Route =
   | { name: 'home' }
   | { name: 'new' }
   | { name: 'pet'; id: string }
+  | { name: 'details'; id: string }
   | { name: 'edit'; id: string; back: string }
   | { name: 'print-qrs' }
 
@@ -37,6 +38,8 @@ function parseHash(): Route {
     const fromHome = new URLSearchParams(edit[2] ?? '').get('from') === 'home'
     return { name: 'edit', id: decodeURIComponent(edit[1]), back: fromHome ? '/' : `/pet/${decodeURIComponent(edit[1])}` }
   }
+  const details = hash.match(/^\/pet\/([^/]+)\/details$/)
+  if (details) return { name: 'details', id: decodeURIComponent(details[1]) }
   const pet = hash.match(/^\/pet\/([^/]+)$/)
   if (pet) return { name: 'pet', id: decodeURIComponent(pet[1]) }
   return { name: 'home' }
@@ -544,7 +547,14 @@ function HomePage() {
             <article id={`pet-card-${pet.id}`} key={pet.id} className={`pet-card status-${fedToday ? 'fed-today' : status}`}>
               <div className="pet-card-head">
                 <div className="cover-thumb-wrap">
-                  <CoverThumb pet={pet} />
+                  <button
+                    type="button"
+                    className="cover-thumb-open"
+                    aria-label={`View ${pet.name}`}
+                    onClick={() => go(`/pet/${pet.id}/details`)}
+                  >
+                    <CoverThumb pet={pet} />
+                  </button>
                   <button
                     type="button"
                     className="cover-edit-btn"
@@ -564,7 +574,11 @@ function HomePage() {
                   </button>
                 </div>
                 <div className="pet-card-titles">
-                  <h2>{pet.name}</h2>
+                  <h2>
+                    <button type="button" className="pet-name-open" onClick={() => go(`/pet/${pet.id}/details`)}>
+                      {pet.name}
+                    </button>
+                  </h2>
                   <span className={`badge ${fedToday ? 'fed-today' : status}`}>
                     {fedToday ? 'Fed today' : dueLabel(schedule.nextDueDate)}
                   </span>
@@ -623,6 +637,9 @@ function NewPetPage() {
 function EditPetPage({ id, back }: { id: string; back: string }) {
   const { pet, loaded } = usePet(id)
   const [confirmDelete, setConfirmDelete] = useState(false)
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0)
+  }, [id])
   if (!loaded) {
     return (
       <AppShell title="Pet" back={back}>
@@ -847,6 +864,99 @@ function PetPage({ id }: { id: string }) {
   )
 }
 
+function PetDetailsPage({ id }: { id: string }) {
+  const { pet, loaded } = usePet(id)
+  const events = useFeedings(id)
+  const schedule = pet ? computeSchedule(pet, events) : { lastFedDate: null, nextDueDate: null }
+  const status = dueStatus(schedule.nextDueDate)
+  const fedToday = wasFedToday(schedule.lastFedDate)
+  const weight = pet ? latestWeighing(pet.weighings) : null
+
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0)
+  }, [id])
+
+  if (!loaded) {
+    return (
+      <AppShell title="Pet" back="/">
+        <p className="muted">Loading…</p>
+      </AppShell>
+    )
+  }
+
+  if (!pet) {
+    return (
+      <AppShell title="Pet" back="/">
+        <p className="muted">This pet was not found.</p>
+      </AppShell>
+    )
+  }
+
+  return (
+    <AppShell title={pet.name} back="/">
+      <section className="panel pet-hero">
+        <CoverPhoto pet={pet} editable={false} />
+        <p className="pet-identity">
+          <SexIcon sex={pet.sex} />
+          <span>
+            {petSexLabel(pet.sex)} · {pet.species}
+            {pet.morphs.length ? ` · ${pet.morphs.join(' / ')}` : ''}
+          </span>
+        </p>
+        <span className={`badge ${fedToday ? 'fed-today' : status}`}>
+          {fedToday ? 'Fed today' : dueLabel(schedule.nextDueDate)}
+        </span>
+        <p>
+          Feeding period: every <strong>{pet.feedingPeriodDays}</strong> days
+          {feederSummary(pet) ? ` · ${feederSummary(pet)}` : ''}
+          {weight ? ` · ${formatGrams(weight.grams)} g` : ''}
+          {schedule.lastFedDate ? ` · Last ate ${formatPretty(schedule.lastFedDate)}` : ''}
+          {schedule.nextDueDate ? ` · Next ${formatPretty(schedule.nextDueDate)}` : ''}
+        </p>
+      </section>
+
+      <section className="panel">
+        <MiniCalendar compactWeeks cycles={buildCycles(pet, events)} nextDueDate={schedule.nextDueDate} />
+      </section>
+
+      <section className="panel">
+        <h2>History</h2>
+        {events.length === 0 ? (
+          <p className="muted">No feedings recorded yet.</p>
+        ) : (
+          <ul className="history">
+            {events.map((event) => (
+              <li key={event.id}>
+                <div>
+                  <strong>{formatPretty(event.date)}</strong>
+                  {(event.tags?.length ? event.tags : [outcomeLabel(event.outcome)]).map((tag) => {
+                    const standard = resultTagOutcome(tag)
+                    return (
+                      <span key={tag} className={`pill ${standard ?? 'custom'}`}>
+                        {tag}
+                      </span>
+                    )
+                  })}
+                </div>
+                {event.extensionDays > 0 ? (
+                  <p className="muted">
+                    Extended by {event.extensionDays} day{event.extensionDays === 1 ? '' : 's'}
+                  </p>
+                ) : null}
+                {event.tags?.length ? null : event.note ? <p>{event.note}</p> : null}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="panel">
+        <WeightTracker pet={pet} readOnly />
+      </section>
+    </AppShell>
+  )
+}
+
 function PrintQrPage() {
   const pets = usePets()
   const stickers = useMemo(() => {
@@ -908,6 +1018,7 @@ export default function App() {
   if (route.name === 'print-qrs') return <PrintQrPage />
   if (route.name === 'new') return <NewPetPage />
   if (route.name === 'edit') return <EditPetPage id={route.id} back={route.back} />
+  if (route.name === 'details') return <PetDetailsPage id={route.id} />
   if (route.name === 'pet') return <PetPage id={route.id} />
   return <HomePage />
 }

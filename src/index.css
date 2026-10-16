@@ -193,6 +193,30 @@ main {
   width: 56px;
   height: 56px;
 }
+.cover-thumb-open,
+.pet-name-open {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.cover-thumb-open {
+  display: block;
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+}
+.pet-card-head h2 .pet-name-open {
+  display: block;
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .cover-edit-btn {
   position: absolute;
   top: -5px;
@@ -807,6 +831,14 @@ button.calendar-cell {
 .history li div { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 
 .pet-hero { display: grid; gap: 8px; }
+.pet-identity {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 0;
+  color: var(--muted);
+}
+.pet-identity span { min-width: 0; }
 
 .pet-qr {
   background: #fff;
