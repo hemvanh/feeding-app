@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-17T06:39:19.628Z",
+  "updatedAt": "2026-10-17T06:39:29.220Z",
   "pets": [
     {
       "id": "0865826f-79d8-4d0a-a6ee-926ab13c6346",
@@ -1044,6 +1044,19 @@
       "tags": [
         "Ate",
         "lột"
+      ]
+    },
+    {
+      "id": "a75e1606-e281-411c-8743-02f9b5b1a449",
+      "petId": "d666bfbb-c60f-45ed-a81a-c98780644532",
+      "date": "2026-10-17",
+      "note": "",
+      "outcome": "regurgitated",
+      "extensionDays": 3,
+      "createdAt": "2026-10-17T06:39:28.964Z",
+      "tags": [
+        "Ate",
+        "Regurg."
       ]
     },
     {
