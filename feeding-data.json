@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-30T18:11:10.926Z",
+  "updatedAt": "2026-11-01T15:46:35.441Z",
   "pets": [
     {
       "id": "0865826f-79d8-4d0a-a6ee-926ab13c6346",
@@ -174,7 +174,7 @@
       "morphs": [
         "Butterfly"
       ],
-      "feedingPeriodDays": 5,
+      "feedingPeriodDays": 14,
       "feederType": "Water Change",
       "feederWeightGrams": 250,
       "createdAt": "2026-09-05T13:39:28.800Z",
