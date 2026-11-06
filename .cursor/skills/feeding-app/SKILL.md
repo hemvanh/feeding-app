@@ -44,9 +44,8 @@ Do this in order without asking again. Skip an empty `dev` commit when the tree 
 - The service worker registers only when `import.meta.env.PROD`. Check it with `npm run preview` (port 4173), not the dev server.
 - Dexie is version 1 with stores `pets` and `feedings`. Extra fields (`tags`, `coverAt`, `weighings`, `sex`) are stored without a schema bump. Bump the version only when adding an index.
 - A feeding still has one `outcome` for the schedule. `fed` and `water-changed` succeed and start the next cycle. `refused`, `regurgitated`, and `extended` add `extensionDays` on top of the current due date. Tag priority when several results are selected: regurgitated, then refused, then water-changed, then fed. At least one standard result is required. Custom tags are removable; standard tags only toggle.
-- Prepare groups are feeder type only. Chip text still includes the amount (`Name · 5g` or `250L`). Water Change amounts use liters.
-- The prepare sentinel is `position: absolute` and 1px tall inside `.home-prep`. Do not give it a negative margin; that sticks the bar docked at scroll 0. The docked bar caps at `39dvh`, scrolls inside, and uses the green scrollbar. The spacer height must match the visible docked bar, not the full content height.
-- The GitHub JSON panel stays hidden when the browser is connected. The link icon in the top bar shows it. Button order when there is no Back button: JSON link, print, scan, New.
+- Prepare groups are feeder type only. Chip text still includes the amount (`Name · 5g` or `250L`). Water Change amounts use liters. `#/` is All Pets (search and pet cards, no prepare list). `#/pending` is only the prepare list. A prepare chip opens that pet's Feed page (`#/pet/{id}`).
+- The GitHub JSON panel stays hidden when the browser is connected. Home tools live in the Menu button, in this order: JSON link, print, scan, New. Beside Menu are the Pending (clock) and All Pets buttons.
 - Pet page opens at scroll 0. `Feed !` and `Extend` sit on the header row, right side, same line as Back.
 
 ## Where to change things

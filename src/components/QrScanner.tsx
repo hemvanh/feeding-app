@@ -96,8 +96,42 @@ export function QrScanner({
     }
   }, [])
 
+  const [closing, setClosing] = useState(false)
+  const finished = useRef(false)
+  const onCloseRef = useRef(onClose)
+  onCloseRef.current = onClose
+
+  function requestClose() {
+    if (closing || finished.current) return
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      finished.current = true
+      onCloseRef.current()
+      return
+    }
+    setClosing(true)
+  }
+
+  useEffect(() => {
+    if (!closing) return
+    const timer = window.setTimeout(() => {
+      if (finished.current) return
+      finished.current = true
+      onCloseRef.current()
+    }, 150)
+    return () => window.clearTimeout(timer)
+  }, [closing])
+
   return (
-    <div className="confirm-backdrop" onClick={onClose}>
+    <div
+      className={`confirm-backdrop${closing ? ' is-closing' : ''}`}
+      onClick={requestClose}
+      onAnimationEnd={(event) => {
+        if (!closing || event.target !== event.currentTarget || event.animationName !== 'pop-fade-out') return
+        if (finished.current) return
+        finished.current = true
+        onCloseRef.current()
+      }}
+    >
       <div
         className="qr-scan-dialog"
         role="dialog"
@@ -116,7 +150,7 @@ export function QrScanner({
           </>
         )}
         {error ? <p className="error">{error}</p> : null}
-        <button type="button" className="ghost-btn" onClick={onClose}>
+        <button type="button" className="ghost-btn" onClick={requestClose}>
           Cancel
         </button>
       </div>

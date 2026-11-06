@@ -17,12 +17,12 @@ import { FEEDER_TYPES, feederAmountUnit, feederSummary, isWaterChange, latestWei
 import { coverPhotoPath } from './utils/coverPhoto'
 import { petIdFromQrText } from './utils/petQr'
 import { qrInkForPets, type QrInk } from './utils/qrColors'
-import { openPetQrPrintSheet } from './utils/qrPrintSheet'
 import { formatPretty, todayISO } from './utils/dates'
 import { computeSchedule, dueLabel, dueStatus, buildCycles, wasFedToday, prepUrgency } from './utils/schedule'
 
 type Route =
   | { name: 'home' }
+  | { name: 'pending' }
   | { name: 'new' }
   | { name: 'pet'; id: string }
   | { name: 'details'; id: string }
@@ -32,6 +32,7 @@ type Route =
 function parseHash(): Route {
   const hash = window.location.hash.replace(/^#/, '') || '/'
   if (hash === '/new') return { name: 'new' }
+  if (hash === '/pending') return { name: 'pending' }
   if (hash === '/print-qrs') return { name: 'print-qrs' }
   const edit = hash.match(/^\/pet\/([^/?]+)\/edit(?:\?(.*))?$/)
   if (edit) {
@@ -47,6 +48,38 @@ function parseHash(): Route {
 
 function go(path: string) {
   window.location.hash = path
+}
+
+function routeKey(route: Route) {
+  switch (route.name) {
+    case 'home':
+      return 'pets'
+    case 'pending':
+      return 'pending'
+    case 'pet':
+      return `pet:${route.id}`
+    case 'details':
+      return `details:${route.id}`
+    case 'edit':
+      return `edit:${route.id}`
+    default:
+      return route.name
+  }
+}
+
+function routeDepth(key: string) {
+  if (key === 'pets' || key === 'pending') return 0
+  if (key.startsWith('pet:')) return 1
+  return 2
+}
+
+function pageDirection(from: Route, to: Route) {
+  const start = routeKey(from)
+  const end = routeKey(to)
+  if ((start === 'pets' && end === 'pending') || (start === 'pending' && end === 'pets')) {
+    return end === 'pets' ? 'page-forward' : 'page-back'
+  }
+  return routeDepth(end) >= routeDepth(start) ? 'page-forward' : 'page-back'
 }
 
 async function deletePetAndCover(pet: Pet) {
@@ -70,6 +103,7 @@ function AppShell({
   onScan,
   onPrintQrs,
   showSync,
+  homeView,
 }: {
   title?: string
   children: ReactNode
@@ -78,15 +112,54 @@ function AppShell({
   onScan?: () => void
   onPrintQrs?: () => void
   showSync?: boolean
+  homeView?: 'pets' | 'pending'
 }) {
   const [, setSyncTick] = useState(0)
   const githubOk = isGitHubConnected() && getSyncStatus().connected
   const [syncOpen, setSyncOpen] = useState(() => !isGitHubConnected())
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [menuMounted, setMenuMounted] = useState(false)
+  const [menuClosing, setMenuClosing] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => subscribeSync(() => setSyncTick((n) => n + 1)), [])
   useEffect(() => {
     setSyncOpen(!githubOk)
   }, [githubOk])
+  useEffect(() => {
+    if (menuOpen) {
+      setMenuMounted(true)
+      setMenuClosing(false)
+      return
+    }
+    if (!menuMounted) return
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setMenuMounted(false)
+      setMenuClosing(false)
+      return
+    }
+    setMenuClosing(true)
+    const timer = window.setTimeout(() => {
+      setMenuMounted(false)
+      setMenuClosing(false)
+    }, 150)
+    return () => window.clearTimeout(timer)
+  }, [menuOpen, menuMounted])
+  useEffect(() => {
+    if (!menuOpen) return
+    function onPointer(event: PointerEvent) {
+      if (!menuRef.current?.contains(event.target as Node)) setMenuOpen(false)
+    }
+    function onKey(event: KeyboardEvent) {
+      if (event.key === 'Escape') setMenuOpen(false)
+    }
+    document.addEventListener('pointerdown', onPointer)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('pointerdown', onPointer)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [menuOpen])
 
   return (
     <div className="app">
@@ -109,64 +182,138 @@ function AppShell({
           actions ?? <span className="spacer" />
         ) : (
           <div className="topbar-actions">
-            {showSync ? (
-              <button
-                type="button"
-                className={`primary-btn compact scan-btn${syncOpen ? ' on' : ''}`}
-                aria-label={syncOpen ? 'Hide GitHub JSON' : 'Show GitHub JSON'}
-                aria-pressed={syncOpen}
-                onClick={() => setSyncOpen((value) => !value)}
-              >
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"
-                  />
-                </svg>
-              </button>
-            ) : null}
-            {onPrintQrs ? (
-              <button
-                type="button"
-                className="primary-btn compact scan-btn"
-                aria-label="Print all pet QR codes"
-                onClick={onPrintQrs}
-              >
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M6 9V4h12v5M6 18H4a1 1 0 0 1-1-1v-6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6a1 1 0 0 1-1 1h-2"
-                  />
-                  <path fill="none" stroke="currentColor" strokeWidth="2" d="M6 14h12v6H6z" />
-                </svg>
-              </button>
-            ) : null}
-            {onScan ? (
-              <button type="button" className="primary-btn compact scan-btn" aria-label="Scan pet QR" onClick={onScan}>
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M7 3H4v3M17 3h3v3M7 21H4v-3M20 18v3h-3"
-                  />
-                  <path fill="currentColor" d="M6 6h5v5H6V6Zm1.5 1.5v2h2v-2h-2Zm5.5-1.5h5v5h-5V6Zm1.5 1.5v2h2v-2h-2ZM6 13h5v5H6v-5Zm1.5 1.5v2h2v-2h-2ZM13 13h2v2h-2v-2Zm3 0h2v2h-2v-2Zm-3 3h2v2h-2v-2Zm3 0h2v2h-2v-2Z" />
-                </svg>
-              </button>
-            ) : null}
-            <button type="button" className="primary-btn compact" aria-label="New pet" onClick={() => go('/new')}>
-              New
+            <button
+              type="button"
+              className={`primary-btn compact scan-btn view-btn${homeView === 'pending' ? ' on' : ''}`}
+              aria-label="Pending feeds"
+              aria-pressed={homeView === 'pending'}
+              onClick={() => {
+                setMenuOpen(false)
+                go('/pending')
+              }}
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" strokeWidth="2" />
+                <path fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" d="M12 8v4.5l2.5 1.5" />
+              </svg>
             </button>
+            <button
+              type="button"
+              className={`primary-btn compact scan-btn view-btn${homeView === 'pets' ? ' on' : ''}`}
+              aria-label="All pets"
+              aria-pressed={homeView === 'pets'}
+              onClick={() => {
+                setMenuOpen(false)
+                go('/')
+              }}
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <rect x="3.5" y="3.5" width="7" height="7" rx="1.6" fill="none" stroke="currentColor" strokeWidth="2" />
+                <rect x="13.5" y="3.5" width="7" height="7" rx="1.6" fill="none" stroke="currentColor" strokeWidth="2" />
+                <rect x="3.5" y="13.5" width="7" height="7" rx="1.6" fill="none" stroke="currentColor" strokeWidth="2" />
+                <rect x="13.5" y="13.5" width="7" height="7" rx="1.6" fill="none" stroke="currentColor" strokeWidth="2" />
+              </svg>
+            </button>
+            <div className="topbar-menu" ref={menuRef}>
+              <button
+                type="button"
+                className={`primary-btn compact scan-btn view-btn menu-btn${menuOpen ? ' is-open' : ''}`}
+                aria-label="Menu"
+                aria-expanded={menuOpen}
+                onClick={() => setMenuOpen((value) => !value)}
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    d="M4 7h16M4 12h16M4 17h16"
+                  />
+                </svg>
+              </button>
+              {menuMounted ? (
+                <div className={`topbar-menu-panel${menuClosing ? ' is-closing' : ''}`} role="menu">
+                  {showSync ? (
+                    <button
+                      type="button"
+                      className={`primary-btn compact scan-btn${syncOpen ? ' on' : ''}`}
+                      aria-label={syncOpen ? 'Hide GitHub JSON' : 'Show GitHub JSON'}
+                      aria-pressed={syncOpen}
+                      onClick={() => setSyncOpen((value) => !value)}
+                    >
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"
+                        />
+                      </svg>
+                    </button>
+                  ) : null}
+                  {onPrintQrs ? (
+                    <button
+                      type="button"
+                      className="primary-btn compact scan-btn"
+                      aria-label="Print all pet QR codes"
+                      onClick={() => {
+                        setMenuOpen(false)
+                        onPrintQrs()
+                      }}
+                    >
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M6 9V4h12v5M6 18H4a1 1 0 0 1-1-1v-6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6a1 1 0 0 1-1 1h-2"
+                        />
+                        <path fill="none" stroke="currentColor" strokeWidth="2" d="M6 14h12v6H6z" />
+                      </svg>
+                    </button>
+                  ) : null}
+                  {onScan ? (
+                    <button
+                      type="button"
+                      className="primary-btn compact scan-btn"
+                      aria-label="Scan pet QR"
+                      onClick={() => {
+                        setMenuOpen(false)
+                        onScan()
+                      }}
+                    >
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M7 3H4v3M17 3h3v3M7 21H4v-3M20 18v3h-3"
+                        />
+                        <path fill="currentColor" d="M6 6h5v5H6V6Zm1.5 1.5v2h2v-2h-2Zm5.5-1.5h5v5h-5V6Zm1.5 1.5v2h2v-2h-2ZM6 13h5v5H6v-5Zm1.5 1.5v2h2v-2h-2ZM13 13h2v2h-2v-2Zm3 0h2v2h-2v-2Zm-3 3h2v2h-2v-2Zm3 0h2v2h-2v-2Z" />
+                      </svg>
+                    </button>
+                  ) : null}
+                  <button
+                    type="button"
+                    className="primary-btn compact"
+                    aria-label="New pet"
+                    onClick={() => {
+                      setMenuOpen(false)
+                      go('/new')
+                    }}
+                  >
+                    New
+                  </button>
+                </div>
+              ) : null}
+            </div>
           </div>
         )}
       </header>
@@ -176,20 +323,13 @@ function AppShell({
   )
 }
 
-function HomePage() {
+function HomePage({ view }: { view: 'pets' | 'pending' }) {
   const pets = usePets()
   const events = useAllFeedings()
   const [filter, setFilter] = useState('')
+  const searchRef = useRef<HTMLInputElement>(null)
   const [scanning, setScanning] = useState(false)
   const [scanError, setScanError] = useState('')
-  const [prepDocked, setPrepDocked] = useState(false)
-  const [prepHeight, setPrepHeight] = useState(0)
-  const prepRef = useRef<HTMLElement>(null)
-  const prepSentinelRef = useRef<HTMLDivElement>(null)
-  const targetFlashTimer = useRef(0)
-  const targetScrollTimer = useRef(0)
-  const pendingScrollEnd = useRef<(() => void) | null>(null)
-  const showPrep = Boolean(pets && pets.length > 0)
 
   const cards = useMemo(() => {
     if (!pets || !events) return []
@@ -271,156 +411,9 @@ function HomePage() {
       })
   }, [events, pets])
 
-  useEffect(() => {
-    if (!showPrep) {
-      setPrepDocked(false)
-      return
-    }
-    const sentinel = prepSentinelRef.current
-    if (!sentinel) return
-    const io = new IntersectionObserver(
-      ([entry]) => {
-        setPrepDocked(!entry.isIntersecting)
-      },
-      { threshold: 0, root: null, rootMargin: '0px' },
-    )
-    io.observe(sentinel)
-    return () => io.disconnect()
-  }, [showPrep])
-
-  useEffect(() => {
-    return () => {
-      window.clearTimeout(targetFlashTimer.current)
-      window.clearTimeout(targetScrollTimer.current)
-      if (pendingScrollEnd.current) {
-        window.removeEventListener('scrollend', pendingScrollEnd.current)
-      }
-    }
-  }, [])
-
   useLayoutEffect(() => {
-    const el = prepRef.current
-    if (!el) return
-    const measure = () => {
-      const next = el.getBoundingClientRect().height
-      setPrepHeight((prev) => (Math.abs(prev - next) < 0.5 ? prev : next))
-    }
-    measure()
-    if (!prepDocked) return
-    window.addEventListener('resize', measure)
-    window.visualViewport?.addEventListener('resize', measure)
-    return () => {
-      window.removeEventListener('resize', measure)
-      window.visualViewport?.removeEventListener('resize', measure)
-    }
-  }, [prepDocked, prepGroups, showPrep])
-
-  function measureDockedPrepHeight(bar: HTMLElement): number {
-    if (bar.classList.contains('is-docked')) return bar.getBoundingClientRect().height
-    const probe = bar.cloneNode(true) as HTMLElement
-    probe.classList.add('is-docked')
-    probe.setAttribute('aria-hidden', 'true')
-    probe.tabIndex = -1
-    probe.style.visibility = 'hidden'
-    probe.style.pointerEvents = 'none'
-    if (!probe.querySelector('.feeder-prep-top')) {
-      const bump = document.createElement('span')
-      bump.className = 'primary-btn compact feeder-prep-top'
-      const head = probe.querySelector('.feeder-prep-head')
-      ;(head ?? probe).appendChild(bump)
-    }
-    document.body.appendChild(probe)
-    const height = probe.getBoundingClientRect().height
-    probe.remove()
-    return height
-  }
-
-  function alignCardBelowPrep(card: HTMLElement, bar: HTMLElement) {
-    const delta = card.getBoundingClientRect().top - (bar.getBoundingClientRect().bottom + 13)
-    if (Math.abs(delta) > 2) window.scrollBy(0, delta)
-  }
-
-  function cardFullyVisibleBelowPrep(card: HTMLElement, bar: HTMLElement) {
-    const box = card.getBoundingClientRect()
-    const barBottom = bar.getBoundingClientRect().bottom
-    return (
-      box.top >= barBottom - 2 &&
-      box.bottom <= window.innerHeight + 2 &&
-      box.left >= -2 &&
-      box.right <= window.innerWidth + 2
-    )
-  }
-
-  function scrollToPetCard(petId: string) {
-    const el = document.getElementById(`pet-card-${petId}`)
-    const bar = prepRef.current
-    if (!el || !bar) return
-    const target = el
-    window.clearTimeout(targetFlashTimer.current)
-    window.clearTimeout(targetScrollTimer.current)
-    if (pendingScrollEnd.current) {
-      window.removeEventListener('scrollend', pendingScrollEnd.current)
-      pendingScrollEnd.current = null
-    }
-    document.querySelectorAll('.pet-card.is-targeted, .feeder-prep-chip.is-targeted').forEach((node) => {
-      node.classList.remove('is-targeted')
-    })
-
-    let flashed = false
-    function stopJumpWatch() {
-      if (pendingScrollEnd.current) {
-        window.removeEventListener('scrollend', pendingScrollEnd.current)
-        pendingScrollEnd.current = null
-      }
-      window.clearTimeout(targetScrollTimer.current)
-    }
-
-    function flashTarget(align: boolean) {
-      if (flashed) return
-      flashed = true
-      stopJumpWatch()
-      const barNow = prepRef.current
-      if (align && barNow) alignCardBelowPrep(target, barNow)
-      const chip = document.getElementById(`prep-chip-${petId}`)
-      target.classList.remove('is-targeted')
-      chip?.classList.remove('is-targeted')
-      void target.offsetWidth
-      if (chip) void chip.offsetWidth
-      target.classList.add('is-targeted')
-      chip?.classList.add('is-targeted')
-      window.clearTimeout(targetFlashTimer.current)
-      targetFlashTimer.current = window.setTimeout(() => {
-        target.classList.remove('is-targeted')
-        chip?.classList.remove('is-targeted')
-      }, 1500)
-    }
-
-    function finishJump() {
-      if (flashed) return
-      stopJumpWatch()
-      const nearDest = Math.abs(window.scrollY - dest) <= 40
-      if (nearDest && Math.abs(window.scrollY - dest) > 3) {
-        window.scrollTo({ top: dest, behavior: 'auto' })
-      }
-      requestAnimationFrame(() => requestAnimationFrame(() => flashTarget(nearDest)))
-    }
-
-    if (cardFullyVisibleBelowPrep(target, bar)) {
-      flashTarget(false)
-      return
-    }
-
-    const dockedHeight = measureDockedPrepHeight(bar)
-    const dest = Math.max(0, window.scrollY + target.getBoundingClientRect().top - dockedHeight - 13)
-    if (Math.abs(dest - window.scrollY) < 2) {
-      flashTarget(true)
-      return
-    }
-    pendingScrollEnd.current = finishJump
-    window.addEventListener('scrollend', finishJump, { once: true })
-    window.scrollTo({ top: dest, behavior: 'smooth' })
-    targetScrollTimer.current = window.setTimeout(finishJump, 800)
-  }
+    window.scrollTo(0, 0)
+  }, [view])
 
   function handleQrScan(text: string) {
     const id = petIdFromQrText(text)
@@ -439,21 +432,14 @@ function HomePage() {
 
   return (
     <AppShell
+      homeView={view}
       showSync
       onScan={() => {
         setScanError('')
         setScanning(true)
       }}
-      onPrintQrs={() => openPetQrPrintSheet()}
+      onPrintQrs={() => go('/print-qrs')}
     >
-      <label className="search-field">
-        <span className="sr-only">Search pets</span>
-        <input
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-          placeholder="Search name, species, morph"
-        />
-      </label>
       {scanning ? (
         <QrScanner
           error={scanError}
@@ -464,39 +450,15 @@ function HomePage() {
           onScan={handleQrScan}
         />
       ) : null}
-      {showPrep ? (
-        <div className="home-prep">
-          <div ref={prepSentinelRef} className="feeder-prep-sentinel" aria-hidden="true" />
-          {prepDocked ? <div className="feeder-prep-spacer" style={{ height: prepHeight }} aria-hidden="true" /> : null}
-          <section
-            ref={prepRef}
-            className={`panel feeder-prep${prepDocked ? ' is-docked' : ''}`}
-            aria-label="Feeders to prepare"
-          >
+      {view === 'pending' ? (
+        <section className="panel feeder-prep is-page" aria-label="Feeders to prepare">
           <div className="feeder-prep-body">
             <div className="feeder-prep-head">
               <h2>Prepare for overdue and due today</h2>
-              {prepDocked ? (
-                <button
-                  type="button"
-                  className="primary-btn compact feeder-prep-top"
-                  aria-label="Scroll to top"
-                  onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                >
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.4"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                  d="M6 14.5 12 8.5 18 14.5"
-                />
-                  </svg>
-                </button>
-              ) : null}
             </div>
-            {prepGroups.length === 0 ? (
+            {pets === undefined || events === undefined ? (
+              <p className="muted">Loading pets…</p>
+            ) : prepGroups.length === 0 ? (
               <p className="muted">Nothing to thaw right now.</p>
             ) : (
               <div className="feeder-prep-groups">
@@ -509,10 +471,9 @@ function HomePage() {
                           {group.items.map((item) => (
                             <button
                               key={item.petId}
-                              id={`prep-chip-${item.petId}`}
                               type="button"
                               className={`feeder-prep-chip ${item.urgency}`}
-                              onClick={() => scrollToPetCard(item.petId)}
+                              onClick={() => go(`/pet/${item.petId}`)}
                             >
                               {item.label}
                             </button>
@@ -525,10 +486,45 @@ function HomePage() {
               </div>
             )}
           </div>
-          </section>
-        </div>
+        </section>
       ) : null}
-      {pets === undefined || events === undefined ? (
+      {view === 'pets' ? (
+      <label className={`search-field${filter ? ' has-clear' : ''}`}>
+        <span className="sr-only">Search pets</span>
+        <input
+          ref={searchRef}
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          onFocus={(e) => {
+            const input = e.currentTarget
+            input.select()
+            requestAnimationFrame(() => input.select())
+          }}
+          onMouseUp={(e) => {
+            e.preventDefault()
+            e.currentTarget.select()
+          }}
+          placeholder="Search name, species, morph"
+        />
+        {filter ? (
+          <button
+            type="button"
+            className="search-clear"
+            aria-label="Clear search"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => {
+              setFilter('')
+              searchRef.current?.focus()
+            }}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" d="M6 6l12 12M18 6L6 18" />
+            </svg>
+          </button>
+        ) : null}
+      </label>
+      ) : null}
+      {view === 'pending' ? null : pets === undefined || events === undefined ? (
         <section className="empty">
           <p className="muted">Loading pets…</p>
         </section>
@@ -983,13 +979,20 @@ function PrintQrPage() {
     }
   }, [stickerKey])
 
+  useEffect(() => {
+    document.body.classList.add('is-qr-print')
+    return () => document.body.classList.remove('is-qr-print')
+  }, [])
+
   return (
-    <div className="qr-print-page">
-      <div className="qr-print-toolbar">
+    <AppShell
+      back="/"
+      actions={
         <button type="button" className="primary-btn compact" onClick={() => window.print()}>
           Print
         </button>
-      </div>
+      }
+    >
       {pets === undefined ? (
         <p className="muted">Loading pets…</p>
       ) : stickers.length === 0 ? (
@@ -1001,12 +1004,27 @@ function PrintQrPage() {
           ))}
         </section>
       )}
-    </div>
+    </AppShell>
   )
+}
+
+function RouteView({ route }: { route: Route }) {
+  if (route.name === 'print-qrs') return <PrintQrPage />
+  if (route.name === 'new') return <NewPetPage />
+  if (route.name === 'home' || route.name === 'pending') {
+    return <HomePage view={route.name === 'pending' ? 'pending' : 'pets'} />
+  }
+  if (route.name === 'edit') return <EditPetPage id={route.id} back={route.back} />
+  if (route.name === 'details') return <PetDetailsPage id={route.id} />
+  return <PetPage id={route.id} />
 }
 
 export default function App() {
   const [route, setRoute] = useState<Route>(parseHash)
+  const [shown, setShown] = useState<Route>(parseHash)
+  const [motion, setMotion] = useState<'in' | 'out' | 'idle'>('in')
+  const [direction, setDirection] = useState<'page-forward' | 'page-back'>('page-forward')
+  const swapRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const onHash = () => setRoute(parseHash())
@@ -1015,10 +1033,35 @@ export default function App() {
     return () => window.removeEventListener('hashchange', onHash)
   }, [])
 
-  if (route.name === 'print-qrs') return <PrintQrPage />
-  if (route.name === 'new') return <NewPetPage />
-  if (route.name === 'edit') return <EditPetPage id={route.id} back={route.back} />
-  if (route.name === 'details') return <PetDetailsPage id={route.id} />
-  if (route.name === 'pet') return <PetPage id={route.id} />
-  return <HomePage />
+  useEffect(() => {
+    if (routeKey(route) === routeKey(shown)) return
+    const nextDirection = pageDirection(shown, route)
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setDirection(nextDirection)
+      setShown(route)
+      setMotion('idle')
+      return
+    }
+    setDirection(nextDirection)
+    setMotion('out')
+    const timer = window.setTimeout(() => {
+      setShown(route)
+      setMotion('in')
+    }, 130)
+    return () => window.clearTimeout(timer)
+  }, [route, shown])
+
+  useLayoutEffect(() => {
+    const el = swapRef.current
+    if (!el || motion === 'idle') return
+    el.style.animation = 'none'
+    void el.offsetWidth
+    el.style.animation = ''
+  }, [motion, direction, shown])
+
+  return (
+    <div ref={swapRef} className={`page-swap is-${motion} ${direction}`}>
+      <RouteView route={shown} />
+    </div>
+  )
 }
