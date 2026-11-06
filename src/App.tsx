@@ -18,13 +18,14 @@ import { coverPhotoPath } from './utils/coverPhoto'
 import { petIdFromQrText } from './utils/petQr'
 import { qrInkForPets, type QrInk } from './utils/qrColors'
 import { formatPretty, todayISO } from './utils/dates'
+import { measurePrepGroups, planPrepColumns, type PrepLayout } from './utils/prepColumns'
 import { computeSchedule, dueLabel, dueStatus, buildCycles, wasFedToday, prepUrgency } from './utils/schedule'
 
 type Route =
   | { name: 'home' }
   | { name: 'pending' }
   | { name: 'new' }
-  | { name: 'pet'; id: string }
+  | { name: 'pet'; id: string; back: string }
   | { name: 'details'; id: string }
   | { name: 'edit'; id: string; back: string }
   | { name: 'print-qrs' }
@@ -41,8 +42,15 @@ function parseHash(): Route {
   }
   const details = hash.match(/^\/pet\/([^/]+)\/details$/)
   if (details) return { name: 'details', id: decodeURIComponent(details[1]) }
-  const pet = hash.match(/^\/pet\/([^/]+)$/)
-  if (pet) return { name: 'pet', id: decodeURIComponent(pet[1]) }
+  const pet = hash.match(/^\/pet\/([^/?]+)(?:\?(.*))?$/)
+  if (pet) {
+    const fromPending = new URLSearchParams(pet[2] ?? '').get('from') === 'pending'
+    return {
+      name: 'pet',
+      id: decodeURIComponent(pet[1]),
+      back: fromPending ? '/pending' : '/',
+    }
+  }
   return { name: 'home' }
 }
 
@@ -330,6 +338,8 @@ function HomePage({ view }: { view: 'pets' | 'pending' }) {
   const searchRef = useRef<HTMLInputElement>(null)
   const [scanning, setScanning] = useState(false)
   const [scanError, setScanError] = useState('')
+  const prepGridRef = useRef<HTMLDivElement>(null)
+  const [prepPlan, setPrepPlan] = useState<(PrepLayout & { signature: string }) | null>(null)
 
   const cards = useMemo(() => {
     if (!pets || !events) return []
@@ -415,6 +425,41 @@ function HomePage({ view }: { view: 'pets' | 'pending' }) {
     window.scrollTo(0, 0)
   }, [view])
 
+  useLayoutEffect(() => {
+    if (view !== 'pending') return
+    const grid = prepGridRef.current
+    if (!grid || prepGroups.length === 0) return
+    const apply = () => {
+      const width = grid.clientWidth
+      if (width < 40) return
+      const split = document.createElement('div')
+      split.className = 'feeder-prep-split'
+      const columnEl = document.createElement('div')
+      columnEl.className = 'feeder-prep-col'
+      const chipsEl = document.createElement('div')
+      chipsEl.className = 'feeder-prep-chips'
+      split.style.cssText = 'position:absolute;visibility:hidden;pointer-events:none;'
+      grid.append(split, columnEl, chipsEl)
+      const column = Number.parseFloat(getComputedStyle(split).columnGap) || 12
+      const group = Number.parseFloat(getComputedStyle(columnEl).rowGap) || 10
+      const chip = Number.parseFloat(getComputedStyle(chipsEl).columnGap) || 8
+      split.remove()
+      columnEl.remove()
+      chipsEl.remove()
+      const plan = planPrepColumns(measurePrepGroups(prepGroups), width, { column, chip, group })
+      const signature = plan.rows.map((row) => (
+        row.kind === 'full'
+          ? `f:${row.groups.map((index) => prepGroups[index]?.key).join(',')}`
+          : `s:${row.template}:${row.left.map((index) => prepGroups[index]?.key).join(',')}:${row.right.map((index) => prepGroups[index]?.key).join(',')}`
+      )).join('|')
+      setPrepPlan((current) => (current?.signature === signature ? current : { ...plan, signature }))
+    }
+    apply()
+    const observer = new ResizeObserver(apply)
+    observer.observe(grid)
+    return () => observer.disconnect()
+  }, [prepGroups, view])
+
   function handleQrScan(text: string) {
     const id = petIdFromQrText(text)
     if (!id) {
@@ -427,7 +472,55 @@ function HomePage({ view }: { view: 'pets' | 'pending' }) {
     }
     setScanning(false)
     setScanError('')
-    go(`/pet/${id}`)
+    go(`/pet/${id}?from=${view === 'pending' ? 'pending' : 'pets'}`)
+  }
+
+  const prepRows = (() => {
+    const groupAt = (index: number) => prepGroups[index]
+    const fallback = [{
+      kind: 'split' as const,
+      left: prepGroups.filter((_, index) => index % 2 === 0),
+      right: prepGroups.filter((_, index) => index % 2 === 1),
+      template: '',
+    }].filter((row) => row.left.length + row.right.length > 0)
+    if (!prepPlan || prepGroups.length === 0) return fallback
+    const signature = prepPlan.rows.map((row) => (
+      row.kind === 'full'
+        ? `f:${row.groups.map((index) => prepGroups[index]?.key).join(',')}`
+        : `s:${row.template}:${row.left.map((index) => prepGroups[index]?.key).join(',')}:${row.right.map((index) => prepGroups[index]?.key).join(',')}`
+    )).join('|')
+    const indexes = prepPlan.rows.flatMap((row) => (row.kind === 'full' ? row.groups : [...row.left, ...row.right]))
+    if (signature !== prepPlan.signature || indexes.some((index) => !prepGroups[index])) return fallback
+    return prepPlan.rows.map((row) => (
+      row.kind === 'full'
+        ? { kind: 'full' as const, groups: row.groups.map(groupAt) }
+        : {
+            kind: 'split' as const,
+            left: row.left.map(groupAt),
+            right: row.right.map(groupAt),
+            template: row.template,
+          }
+    ))
+  })()
+
+  function renderPrepGroup(group: (typeof prepGroups)[number]) {
+    return (
+      <div key={group.key} className="feeder-prep-group">
+        <h3>{group.label}</h3>
+        <div className="feeder-prep-chips">
+          {group.items.map((item) => (
+            <button
+              key={item.petId}
+              type="button"
+              className={`feeder-prep-chip ${item.urgency}`}
+              onClick={() => go(`/pet/${item.petId}?from=pending`)}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -461,27 +554,25 @@ function HomePage({ view }: { view: 'pets' | 'pending' }) {
             ) : prepGroups.length === 0 ? (
               <p className="muted">Nothing to thaw right now.</p>
             ) : (
-              <div className="feeder-prep-groups">
-                {[0, 1].map((col) => (
-                  <div key={col} className="feeder-prep-col">
-                    {prepGroups.filter((_, index) => index % 2 === col).map((group) => (
-                      <div key={group.key} className="feeder-prep-group">
-                        <h3>{group.label}</h3>
-                        <div className="feeder-prep-chips">
-                          {group.items.map((item) => (
-                            <button
-                              key={item.petId}
-                              type="button"
-                              className={`feeder-prep-chip ${item.urgency}`}
-                              onClick={() => go(`/pet/${item.petId}`)}
-                            >
-                              {item.label}
-                            </button>
-                          ))}
+              <div ref={prepGridRef} className="feeder-prep-groups">
+                {prepRows.map((row) => (
+                  row.kind === 'full' ? (
+                    <div key={row.groups.map((group) => group.key).join('|')} className="feeder-prep-col">
+                      {row.groups.map(renderPrepGroup)}
+                    </div>
+                  ) : (
+                    <div
+                      key={`${row.left.map((group) => group.key).join('|')}/${row.right.map((group) => group.key).join('|')}`}
+                      className="feeder-prep-split"
+                      style={row.template ? { gridTemplateColumns: row.template } : undefined}
+                    >
+                      {[row.left, row.right].filter((column) => column.length > 0).map((column) => (
+                        <div key={column.map((group) => group.key).join('|')} className="feeder-prep-col">
+                          {column.map(renderPrepGroup)}
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )
                 ))}
               </div>
             )}
@@ -592,7 +683,7 @@ function HomePage({ view }: { view: 'pets' | 'pending' }) {
               </div>
               <MiniCalendar compactWeeks cycles={cycles} nextDueDate={schedule.nextDueDate} />
               <div className="pet-card-actions">
-                <button type="button" className="primary-btn compact" onClick={() => go(`/pet/${pet.id}`)}>
+                <button type="button" className="primary-btn compact" onClick={() => go(`/pet/${pet.id}?from=pets`)}>
                   {isWaterChange(pet.feederType) ? 'Change' : 'Feed'}
                 </button>
                 <span className="muted small">
@@ -687,7 +778,7 @@ function EditPetPage({ id, back }: { id: string; back: string }) {
   )
 }
 
-function PetPage({ id }: { id: string }) {
+function PetPage({ id, back }: { id: string; back: string }) {
   const { pet, loaded } = usePet(id)
   const events = useFeedings(id)
   const schedule = pet ? computeSchedule(pet, events) : { lastFedDate: null, nextDueDate: null }
@@ -702,7 +793,7 @@ function PetPage({ id }: { id: string }) {
 
   if (!loaded) {
     return (
-      <AppShell title="Pet" back="/">
+      <AppShell title="Pet" back={back}>
         <p className="muted">Loading…</p>
       </AppShell>
     )
@@ -710,7 +801,7 @@ function PetPage({ id }: { id: string }) {
 
   if (!pet) {
     return (
-      <AppShell title="Pet" back="/">
+      <AppShell title="Pet" back={back}>
         <p className="muted">This pet was not found.</p>
       </AppShell>
     )
@@ -741,7 +832,7 @@ function PetPage({ id }: { id: string }) {
   return (
     <AppShell
       title={pet.name}
-      back="/"
+      back={back}
       actions={
         <div className="tabs">
           <button type="button" className={tab === 'feed' ? 'on' : ''} onClick={() => setTab('feed')}>
@@ -1016,7 +1107,7 @@ function RouteView({ route }: { route: Route }) {
   }
   if (route.name === 'edit') return <EditPetPage id={route.id} back={route.back} />
   if (route.name === 'details') return <PetDetailsPage id={route.id} />
-  return <PetPage id={route.id} />
+  return <PetPage id={route.id} back={route.back} />
 }
 
 export default function App() {

@@ -17,7 +17,10 @@
   line-height: 1.45;
 }
 
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
 html, body, #root { min-height: 100%; margin: 0; }
 body { min-height: 100svh; overflow-x: clip; }
 body::before {
@@ -38,6 +41,11 @@ body::before {
 button, input, select, textarea {
   font: inherit;
   color: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+button:focus,
+button:focus-visible {
+  outline: none;
 }
 
 .app {
@@ -1098,6 +1106,10 @@ button.calendar-cell {
   min-width: 0;
 }
 .feeder-prep-groups {
+  display: grid;
+  gap: 10px;
+}
+.feeder-prep-split {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 10px 12px;
