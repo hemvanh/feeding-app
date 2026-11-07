@@ -49,9 +49,46 @@ button:focus-visible {
 }
 
 .app {
+  --pad: 16px;
   width: min(1100px, 100%);
   margin: 0 auto;
-  padding: 16px 16px 40px;
+  padding: var(--pad) var(--pad) 40px;
+}
+
+.topbar-dock {
+  position: sticky;
+  top: 0;
+  z-index: 25;
+  margin: calc(var(--pad) * -1) calc(var(--pad) * -1) 0;
+  padding: var(--pad);
+  background:
+    radial-gradient(circle at top left, #d7ead0 0, transparent 28%),
+    linear-gradient(180deg, var(--bg), var(--bg-2));
+  background-attachment: fixed;
+  background-size: 100% 400vh;
+  background-repeat: no-repeat;
+}
+.topbar-dock .search-field {
+  margin-top: var(--pad);
+}
+.topbar-dock::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  height: 18px;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom in srgb,
+    rgb(from var(--bg) r g b / 1),
+    rgb(from var(--bg) r g b / 0)
+  );
+  opacity: 0;
+  transition: opacity 240ms ease;
+}
+.topbar-dock.is-raised::after {
+  opacity: 1;
 }
 
 .topbar {
@@ -59,7 +96,6 @@ button:focus-visible {
   grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: 12px;
-  margin-bottom: 18px;
 }
 
 .topbar h1 {
@@ -113,7 +149,7 @@ button:focus-visible {
   .confirm-backdrop, .confirm-dialog, .qr-scan-dialog, .sync-bar {
     animation: none;
   }
-  .menu-btn svg, .view-btn, .menu-btn { transition: none; }
+  .menu-btn svg, .view-btn, .menu-btn, .topbar-dock::after { transition: none; }
 }
 
 .spacer { width: 52px; }
@@ -265,6 +301,8 @@ button:focus-visible {
 main {
   display: grid;
   gap: 16px;
+  /* Status rings are drawn 2px outside the card, so this keeps the first card's top edge below the dock. */
+  padding-top: 2px;
 }
 
 .panel, .pet-card, .empty {
@@ -1362,6 +1400,10 @@ button.feeder-prep-chip.very-late.is-targeted {
 .pet-card.is-targeted {
   animation: pet-target-glow 1.5s ease-in-out;
 }
+.app:not(:has(.topbar-dock.is-raised)) .pet-card.is-targeted {
+  position: relative;
+  z-index: 30;
+}
 @keyframes pet-target-glow {
   0%, 40%, 100% {
     box-shadow: var(--shadow), 0 0 0 0 rgb(44 58 45 / 0);
@@ -1411,7 +1453,7 @@ button.feeder-prep-chip.very-late.is-targeted {
 }
 
 @media (max-width: 640px) {
-  .app { padding: 12px 12px 28px; }
+  .app { --pad: 12px; padding: var(--pad) var(--pad) 28px; }
   .calendar-cell { min-height: 40px; }
   .calendar.is-weeks .calendar-cell { min-height: 28px; }
   input, select, textarea, .primary-btn, .ghost-btn, .danger-btn, .back-btn {
@@ -1577,7 +1619,7 @@ body.is-qr-print::before { display: none; }
 @media print {
   .page-swap { animation: none !important; }
   body::before { content: none !important; display: none !important; }
-  .topbar, .sync-bar { display: none !important; }
+  .topbar-dock, .sync-bar { display: none !important; }
   .app { padding: 0 !important; width: auto; }
   html, body, #root, .page-swap, .app, .qr-print-page {
     background: #fff !important;

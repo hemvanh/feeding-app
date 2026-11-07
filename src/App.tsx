@@ -55,6 +55,88 @@ function parseHash(): Route {
   return { name: 'home' }
 }
 
+function focusPetFromHash() {
+  const hash = window.location.hash.replace(/^#/, '') || '/'
+  const query = hash.split('?')[1]
+  if (!query) return ''
+  return new URLSearchParams(query).get('focus') ?? ''
+}
+
+function waitForPageArrival() {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return Promise.resolve()
+  const swap = document.querySelector('.page-swap')
+  if (!swap?.getAnimations) return Promise.resolve()
+  const running = swap.getAnimations().some((anim) => {
+    const name = 'animationName' in anim ? String(anim.animationName) : ''
+    return name.includes('page-in') && anim.playState === 'running'
+  })
+  if (!running) return Promise.resolve()
+  return new Promise<void>((resolve) => {
+    let done = false
+    const finish = () => {
+      if (done) return
+      done = true
+      swap.removeEventListener('animationend', onEnd)
+      window.clearTimeout(timer)
+      resolve()
+    }
+    const onEnd = (event: Event) => {
+      if (event.target !== swap) return
+      finish()
+    }
+    swap.addEventListener('animationend', onEnd)
+    const timer = window.setTimeout(finish, 400)
+  })
+}
+
+function cardScrollTop(card: HTMLElement) {
+  const rect = card.getBoundingClientRect()
+  const margin = 12
+  const dock = document.querySelector('.topbar-dock')?.getBoundingClientRect().height ?? 0
+  const room = window.innerHeight - dock
+  const dest = rect.height >= room - margin * 2
+    ? window.scrollY + rect.top - dock - margin
+    : window.scrollY + rect.top - dock - (room - rect.height) / 2
+  const max = Math.max(0, document.documentElement.scrollHeight - window.innerHeight)
+  return Math.min(Math.max(0, dest), max)
+}
+
+function scrollCardIntoPlace(
+  card: HTMLElement,
+  watch: {
+    isCancelled: () => boolean
+    onScrollEnd: (listener: () => void) => void
+    armTimeout: (finish: () => void) => void
+  },
+) {
+  const dest = cardScrollTop(card)
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  if (reduce || Math.abs(dest - window.scrollY) < 4) {
+    if (Math.abs(dest - window.scrollY) >= 4) window.scrollTo({ top: dest, behavior: 'auto' })
+    return Promise.resolve()
+  }
+  return new Promise<void>((resolve) => {
+    let settled = false
+    const finish = () => {
+      if (settled || watch.isCancelled()) return
+      if (Math.abs(window.scrollY - dest) > 24) return
+      settled = true
+      window.removeEventListener('scrollend', onEnd)
+      resolve()
+    }
+    const onEnd = () => finish()
+    watch.onScrollEnd(onEnd)
+    window.addEventListener('scrollend', onEnd)
+    watch.armTimeout(() => {
+      if (settled) return
+      settled = true
+      window.removeEventListener('scrollend', onEnd)
+      resolve()
+    })
+    window.scrollTo({ top: dest, behavior: 'smooth' })
+  })
+}
+
 function routeKey(route: Route) {
   switch (route.name) {
     case 'home':
@@ -109,6 +191,7 @@ function AppShell({
   onPrintQrs,
   showSync,
   homeView,
+  dockExtra,
 }: {
   title?: string
   children: ReactNode
@@ -118,6 +201,7 @@ function AppShell({
   onPrintQrs?: () => void
   showSync?: boolean
   homeView?: 'pets' | 'pending'
+  dockExtra?: ReactNode
 }) {
   const [, setSyncTick] = useState(0)
   const githubOk = isGitHubConnected() && getSyncStatus().connected
@@ -125,9 +209,19 @@ function AppShell({
   const [menuOpen, setMenuOpen] = useState(false)
   const [menuMounted, setMenuMounted] = useState(false)
   const [menuClosing, setMenuClosing] = useState(false)
+  const [raised, setRaised] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => subscribeSync(() => setSyncTick((n) => n + 1)), [])
+  useEffect(() => {
+    const onScroll = () => {
+      const next = window.scrollY > 2
+      setRaised((current) => (current === next ? current : next))
+    }
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
   useEffect(() => {
     setSyncOpen(!githubOk)
   }, [githubOk])
@@ -168,6 +262,7 @@ function AppShell({
 
   return (
     <div className="app">
+      <div className={raised ? 'topbar-dock is-raised' : 'topbar-dock'}>
       <header className="topbar">
         {back ? (
           <button type="button" className="back-btn" onClick={() => go(back)}>
@@ -322,6 +417,8 @@ function AppShell({
           </div>
         )}
       </header>
+      {dockExtra}
+      </div>
       {showSync && syncOpen ? <SyncBar /> : null}
       <main>{children}</main>
     </div>
@@ -337,6 +434,12 @@ function HomePage({ view }: { view: 'pets' | 'pending' }) {
   const [scanError, setScanError] = useState('')
   const prepGridRef = useRef<HTMLDivElement>(null)
   const [prepPlan, setPrepPlan] = useState<(PrepLayout & { signature: string }) | null>(null)
+  const [targetedId, setTargetedId] = useState<string | null>(null)
+  const pulsedId = useRef('')
+  const targetTimer = useRef(0)
+  const scrollTimer = useRef(0)
+  const flashFrame = useRef(0)
+  const scrollEnd = useRef<(() => void) | null>(null)
 
   const cards = useMemo(() => {
     if (!pets || !events) return []
@@ -418,8 +521,84 @@ function HomePage({ view }: { view: 'pets' | 'pending' }) {
       })
   }, [events, pets])
 
+  useEffect(() => {
+    return () => {
+      window.clearTimeout(targetTimer.current)
+      window.clearTimeout(scrollTimer.current)
+      cancelAnimationFrame(flashFrame.current)
+      if (scrollEnd.current) window.removeEventListener('scrollend', scrollEnd.current)
+    }
+  }, [])
+
   useLayoutEffect(() => {
     window.scrollTo(0, 0)
+  }, [view])
+
+  useLayoutEffect(() => {
+    if (view === 'pets' && focusPetFromHash()) setFilter('')
+  }, [view])
+
+  useEffect(() => {
+    if (view !== 'pets') {
+      pulsedId.current = ''
+      setTargetedId((current) => (current ? null : current))
+      return
+    }
+    const id = focusPetFromHash()
+    if (!id || pulsedId.current === id) return
+    let cancelled = false
+
+    const stopScrollWatch = () => {
+      window.clearTimeout(scrollTimer.current)
+      if (scrollEnd.current) {
+        window.removeEventListener('scrollend', scrollEnd.current)
+        scrollEnd.current = null
+      }
+    }
+
+    const flash = () => {
+      if (cancelled) return
+      setTargetedId(null)
+      flashFrame.current = requestAnimationFrame(() => {
+        if (cancelled) return
+        setTargetedId(id)
+        const cleaned = new URL(window.location.href)
+        if (focusPetFromHash() === id) {
+          cleaned.hash = '/'
+          history.replaceState(history.state, '', cleaned.href)
+        }
+        targetTimer.current = window.setTimeout(() => {
+          setTargetedId((current) => (current === id ? null : current))
+        }, 1500)
+      })
+    }
+
+    void (async () => {
+      await waitForPageArrival()
+      if (cancelled) return
+      const card = document.getElementById(`pet-card-${id}`)
+      if (!card) return
+      pulsedId.current = id
+      await scrollCardIntoPlace(card, {
+        isCancelled: () => cancelled,
+        onScrollEnd: (listener) => {
+          scrollEnd.current = listener
+        },
+        armTimeout: (finish) => {
+          scrollTimer.current = window.setTimeout(finish, 1600)
+        },
+      })
+      stopScrollWatch()
+      if (cancelled) return
+      flash()
+    })()
+
+    return () => {
+      cancelled = true
+      stopScrollWatch()
+      cancelAnimationFrame(flashFrame.current)
+      window.clearTimeout(targetTimer.current)
+    }
   }, [view])
 
   useLayoutEffect(() => {
@@ -510,7 +689,7 @@ function HomePage({ view }: { view: 'pets' | 'pending' }) {
               key={item.petId}
               type="button"
               className={`feeder-prep-chip ${item.urgency}`}
-              onClick={() => go(`/pet/${item.petId}?from=pending`)}
+              onClick={() => go(`/?focus=${encodeURIComponent(item.petId)}`)}
             >
               {item.label}
             </button>
@@ -529,54 +708,7 @@ function HomePage({ view }: { view: 'pets' | 'pending' }) {
         setScanning(true)
       }}
       onPrintQrs={() => go('/print-qrs')}
-    >
-      {scanning ? (
-        <QrScanner
-          error={scanError}
-          onClose={() => {
-            setScanning(false)
-            setScanError('')
-          }}
-          onScan={handleQrScan}
-        />
-      ) : null}
-      {view === 'pending' ? (
-        <section className="panel feeder-prep is-page" aria-label="Feeders to prepare">
-          <div className="feeder-prep-body">
-            <div className="feeder-prep-head">
-              <h2>Prepare for overdue and due today</h2>
-            </div>
-            {pets === undefined || events === undefined ? (
-              <p className="muted">Loading pets…</p>
-            ) : prepGroups.length === 0 ? (
-              <p className="muted">Nothing to thaw right now.</p>
-            ) : (
-              <div ref={prepGridRef} className="feeder-prep-groups">
-                {prepRows.map((row) => (
-                  row.kind === 'full' ? (
-                    <div key={row.groups.map((group) => group.key).join('|')} className="feeder-prep-col">
-                      {row.groups.map(renderPrepGroup)}
-                    </div>
-                  ) : (
-                    <div
-                      key={`${row.left.map((group) => group.key).join('|')}/${row.right.map((group) => group.key).join('|')}`}
-                      className="feeder-prep-split"
-                      style={row.template ? { gridTemplateColumns: row.template } : undefined}
-                    >
-                      {[row.left, row.right].filter((column) => column.length > 0).map((column) => (
-                        <div key={column.map((group) => group.key).join('|')} className="feeder-prep-col">
-                          {column.map(renderPrepGroup)}
-                        </div>
-                      ))}
-                    </div>
-                  )
-                ))}
-              </div>
-            )}
-          </div>
-        </section>
-      ) : null}
-      {view === 'pets' ? (
+      dockExtra={view === 'pets' ? (
       <form
         className={`search-field${filter ? ' has-clear' : ''}`}
         role="search"
@@ -626,6 +758,53 @@ function HomePage({ view }: { view: 'pets' | 'pending' }) {
         ) : null}
       </form>
       ) : null}
+    >
+      {scanning ? (
+        <QrScanner
+          error={scanError}
+          onClose={() => {
+            setScanning(false)
+            setScanError('')
+          }}
+          onScan={handleQrScan}
+        />
+      ) : null}
+      {view === 'pending' ? (
+        <section className="panel feeder-prep is-page" aria-label="Feeders to prepare">
+          <div className="feeder-prep-body">
+            <div className="feeder-prep-head">
+              <h2>Prepare for overdue and due today</h2>
+            </div>
+            {pets === undefined || events === undefined ? (
+              <p className="muted">Loading pets…</p>
+            ) : prepGroups.length === 0 ? (
+              <p className="muted">Nothing to thaw right now.</p>
+            ) : (
+              <div ref={prepGridRef} className="feeder-prep-groups">
+                {prepRows.map((row) => (
+                  row.kind === 'full' ? (
+                    <div key={row.groups.map((group) => group.key).join('|')} className="feeder-prep-col">
+                      {row.groups.map(renderPrepGroup)}
+                    </div>
+                  ) : (
+                    <div
+                      key={`${row.left.map((group) => group.key).join('|')}/${row.right.map((group) => group.key).join('|')}`}
+                      className="feeder-prep-split"
+                      style={row.template ? { gridTemplateColumns: row.template } : undefined}
+                    >
+                      {[row.left, row.right].filter((column) => column.length > 0).map((column) => (
+                        <div key={column.map((group) => group.key).join('|')} className="feeder-prep-col">
+                          {column.map(renderPrepGroup)}
+                        </div>
+                      ))}
+                    </div>
+                  )
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+      ) : null}
       {view === 'pending' ? null : pets === undefined || events === undefined ? (
         <section className="empty">
           <p className="muted">Loading pets…</p>
@@ -642,7 +821,7 @@ function HomePage({ view }: { view: 'pets' | 'pending' }) {
           {cards.map(({ pet, schedule, status, fedToday, cycles }) => {
             const weight = latestWeighing(pet.weighings)
             return (
-            <article id={`pet-card-${pet.id}`} key={pet.id} className={`pet-card status-${fedToday ? 'fed-today' : status}`}>
+            <article id={`pet-card-${pet.id}`} key={pet.id} className={`pet-card status-${fedToday ? 'fed-today' : status}${pet.id === targetedId ? ' is-targeted' : ''}`}>
               <div className="pet-card-head">
                 <div className="cover-thumb-wrap">
                   <button
@@ -862,7 +1041,7 @@ function PetPage({ id, back }: { id: string; back: string }) {
             defaultOutcome={isWaterChange(pet.feederType) ? 'water-changed' : 'fed'}
             onSubmit={async (data) => {
               await saveEvent(data)
-              go('/')
+              go('/pending')
             }}
           />
         ) : (
@@ -875,7 +1054,7 @@ function PetPage({ id, back }: { id: string; back: string }) {
                 outcome: 'extended',
                 extensionDays: days,
               })
-              go('/')
+              go('/pending')
             }}
           />
         )}
