@@ -18,6 +18,7 @@ import { coverPhotoPath } from './utils/coverPhoto'
 import { petIdFromQrText } from './utils/petQr'
 import { qrInkForPets, type QrInk } from './utils/qrColors'
 import { formatPretty, todayISO } from './utils/dates'
+import { go, installHistory } from './utils/navHistory'
 import { measurePrepGroups, planPrepColumns, type PrepLayout } from './utils/prepColumns'
 import { computeSchedule, dueLabel, dueStatus, buildCycles, wasFedToday, prepUrgency } from './utils/schedule'
 
@@ -52,22 +53,6 @@ function parseHash(): Route {
     }
   }
   return { name: 'home' }
-}
-
-function isRootPath(path: string) {
-  const bare = path.split('?')[0]
-  return bare === '/' || bare === '/pending'
-}
-
-function go(path: string) {
-  const current = (window.location.hash.replace(/^#/, '') || '/').split('?')[0]
-  if (isRootPath(path) && !isRootPath(current)) {
-    const next = new URL(window.location.href)
-    next.hash = path
-    window.location.replace(next.href)
-    return
-  }
-  window.location.hash = path
 }
 
 function routeKey(route: Route) {
@@ -1143,12 +1128,7 @@ export default function App() {
   const [direction, setDirection] = useState<'page-forward' | 'page-back'>('page-forward')
   const swapRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    const onHash = () => setRoute(parseHash())
-    window.addEventListener('hashchange', onHash)
-    if (!window.location.hash) window.location.hash = '/'
-    return () => window.removeEventListener('hashchange', onHash)
-  }, [])
+  useEffect(() => installHistory(() => setRoute(parseHash())), [])
 
   useEffect(() => {
     if (routeKey(route) === routeKey(shown)) return
