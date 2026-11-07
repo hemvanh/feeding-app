@@ -54,7 +54,19 @@ function parseHash(): Route {
   return { name: 'home' }
 }
 
+function isRootPath(path: string) {
+  const bare = path.split('?')[0]
+  return bare === '/' || bare === '/pending'
+}
+
 function go(path: string) {
+  const current = (window.location.hash.replace(/^#/, '') || '/').split('?')[0]
+  if (isRootPath(path) && !isRootPath(current)) {
+    const next = new URL(window.location.href)
+    next.hash = path
+    window.location.replace(next.href)
+    return
+  }
   window.location.hash = path
 }
 
@@ -580,12 +592,26 @@ function HomePage({ view }: { view: 'pets' | 'pending' }) {
         </section>
       ) : null}
       {view === 'pets' ? (
-      <label className={`search-field${filter ? ' has-clear' : ''}`}>
-        <span className="sr-only">Search pets</span>
+      <form
+        className={`search-field${filter ? ' has-clear' : ''}`}
+        role="search"
+        onSubmit={(event) => {
+          event.preventDefault()
+          searchRef.current?.blur()
+        }}
+      >
+        <label className="sr-only" htmlFor="pet-search">Search pets</label>
         <input
+          id="pet-search"
           ref={searchRef}
+          enterKeyHint="search"
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
+          onKeyDown={(event) => {
+            if (event.key !== 'Enter') return
+            event.preventDefault()
+            event.currentTarget.blur()
+          }}
           onFocus={(e) => {
             const input = e.currentTarget
             input.select()
@@ -613,7 +639,7 @@ function HomePage({ view }: { view: 'pets' | 'pending' }) {
             </svg>
           </button>
         ) : null}
-      </label>
+      </form>
       ) : null}
       {view === 'pending' ? null : pets === undefined || events === undefined ? (
         <section className="empty">

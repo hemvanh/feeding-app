@@ -20,8 +20,6 @@ export type PrepLayout = {
 type Gaps = { column: number; chip: number; group: number }
 
 const CHIP_ROW = 30
-const HEADING_LINE = 16
-const HEADING_GAP = 6
 
 function needOf(group: MeasuredGroup) {
   return Math.max(group.labelWidth, ...group.chips, 0)
@@ -33,7 +31,7 @@ function columnHeight(groups: MeasuredGroup[], indexes: number[], width: number,
     if (position > 0) height += gaps.group
     const group = groups[index]
     const headingLines = group.labelWidth > width ? Math.ceil(group.labelWidth / width) : 1
-    height += headingLines * HEADING_LINE + HEADING_GAP
+    height += headingLines * CHIP_ROW
     let used = 0
     let rows = 0
     for (const chip of group.chips) {
