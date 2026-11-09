@@ -9,7 +9,7 @@
   --green-2: #1f5c36;
   --red: #b42318;
   --amber: #b45309;
-  --shadow: 0 10px 30px rgba(28, 42, 29, 0.08);
+  --shadow: 0 4px 12px rgba(28, 42, 29, 0.08);
   --radius: 18px;
   font-family: "Segoe UI", system-ui, sans-serif;
   color: var(--ink);
@@ -61,12 +61,7 @@ button:focus-visible {
   z-index: 25;
   margin: calc(var(--pad) * -1) calc(var(--pad) * -1) 0;
   padding: var(--pad);
-  background:
-    radial-gradient(circle at top left, #d7ead0 0, transparent 28%),
-    linear-gradient(180deg, var(--bg), var(--bg-2));
-  background-attachment: fixed;
-  background-size: 100% 400vh;
-  background-repeat: no-repeat;
+  background: var(--bg);
 }
 .topbar-dock .search-field {
   margin-top: var(--pad);
@@ -118,7 +113,7 @@ button:focus-visible {
   font-weight: 400;
   letter-spacing: 0.03em;
   line-height: 1;
-  animation: brand-glow 2.4s ease-in-out infinite;
+  animation: brand-glow 2.4s ease-in-out 1 forwards;
 }
 
 .brand-letter {
@@ -128,7 +123,7 @@ button:focus-visible {
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  animation: brand-slither 1.7s ease-in-out infinite;
+  animation: brand-slither 1.7s ease-in-out 1 forwards;
   animation-delay: calc(var(--i) * 90ms);
 }
 
@@ -144,7 +139,7 @@ button:focus-visible {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .brand, .brand-letter, .today-train rect,
+  .brand, .brand-letter,
   .page-swap, .topbar-menu-panel, .topbar-menu-panel button,
   .confirm-backdrop, .confirm-dialog, .qr-scan-dialog, .sync-bar {
     animation: none;
@@ -211,25 +206,17 @@ button:focus-visible {
   to { opacity: 1; transform: none; }
 }
 .page-swap.is-out { pointer-events: none; }
-.page-swap.is-in.page-forward { animation: page-in-forward 240ms cubic-bezier(0.16, 1, 0.3, 1); }
-.page-swap.is-out.page-forward { animation: page-out-forward 130ms ease forwards; }
-.page-swap.is-in.page-back { animation: page-in-back 240ms cubic-bezier(0.16, 1, 0.3, 1); }
-.page-swap.is-out.page-back { animation: page-out-back 130ms ease forwards; }
-@keyframes page-in-forward {
-  from { opacity: 0; transform: translateX(22px) scale(0.985); }
-  to { opacity: 1; transform: none; }
+.page-swap.is-in.page-forward,
+.page-swap.is-in.page-back { animation: page-fade-in 150ms ease; }
+.page-swap.is-out.page-forward,
+.page-swap.is-out.page-back { animation: page-fade-out 80ms ease forwards; }
+@keyframes page-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
-@keyframes page-out-forward {
-  from { opacity: 1; transform: none; }
-  to { opacity: 0; transform: translateX(-16px) scale(0.985); }
-}
-@keyframes page-in-back {
-  from { opacity: 0; transform: translateX(-22px) scale(0.985); }
-  to { opacity: 1; transform: none; }
-}
-@keyframes page-out-back {
-  from { opacity: 1; transform: none; }
-  to { opacity: 0; transform: translateX(16px) scale(0.985); }
+@keyframes page-fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
 }
 .view-btn {
   background: #eef6ea;
@@ -810,25 +797,6 @@ input, select, textarea {
   outline: none;
   box-shadow: 0 0 0 2px rgba(17, 24, 17, 0.55), 0 0 10px rgba(255, 210, 74, 0.7);
   font-weight: 800;
-}
-.today-train {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  overflow: visible;
-}
-.today-train rect {
-  fill: none;
-  stroke: #ffd24a;
-  stroke-width: 3;
-  stroke-linecap: round;
-  stroke-dasharray: 7 6;
-  animation: today-train 0.55s linear infinite;
-}
-@keyframes today-train {
-  to { stroke-dashoffset: -13; }
 }
 .calendar-cell .day-num {
   position: relative;
@@ -1496,7 +1464,7 @@ button.feeder-prep-chip.very-late.is-targeted {
     --muted: #9aa894;
     --card: #1a231b;
     --line: #2c3a2d;
-    --shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
+    --shadow: 0 4px 12px rgba(0, 0, 0, 0.22);
   }
   input, select, textarea, .chip, .morph-option, .choice, .tag-field {
     background: #121812;

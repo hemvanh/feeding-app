@@ -126,19 +126,6 @@ export function MiniCalendar({
     const day = parseISO(iso).getDate()
     const inner = (
       <>
-        {isToday ? (
-          <svg className="today-train" aria-hidden="true">
-            <rect
-              x="1.5"
-              y="1.5"
-              width="calc(100% - 3px)"
-              height="calc(100% - 3px)"
-              rx="8.5"
-              ry="8.5"
-              pathLength="100"
-            />
-          </svg>
-        ) : null}
         <span className="day-num">{day}</span>
       </>
     )

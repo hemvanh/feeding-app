@@ -1323,7 +1323,7 @@ export default function App() {
     const timer = window.setTimeout(() => {
       setShown(route)
       setMotion('in')
-    }, 130)
+    }, 80)
     return () => window.clearTimeout(timer)
   }, [route, shown])
 
