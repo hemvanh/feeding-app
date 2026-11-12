@@ -30,22 +30,21 @@ export function computeSchedule(
   return { lastFedDate, nextDueDate }
 }
 
-export type CycleMark = 'regurgitated' | 'refused' | 'molt' | 'extended'
+export type CycleMark = 'regurgitated' | 'refused' | 'molt' | 'extended' | 'water-changed' | 'fed'
 
-export const CYCLE_MARK_ORDER: CycleMark[] = ['regurgitated', 'refused', 'molt', 'extended']
+export const CYCLE_MARK_ORDER: CycleMark[] = ['regurgitated', 'refused', 'molt', 'extended', 'water-changed', 'fed']
 
 export type FeedingCycle = {
   fedDate: string
   dueDate: string
   untilDate: string | null
   fed: boolean
-  mark: CycleMark | null
+  mark: CycleMark
   tags: string[]
 }
 
-function cycleMark(event: FeedingEvent): CycleMark | null {
-  if (event.outcome === 'regurgitated' || event.outcome === 'refused') return event.outcome
-  if (isSuccessfulOutcome(event.outcome)) return null
+function cycleMark(event: FeedingEvent): CycleMark {
+  if (event.outcome !== 'extended') return event.outcome
   return (event.tags ?? []).some(isMoltTag) ? 'molt' : 'extended'
 }
 

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import {
   addDays,
   formatISO,
@@ -16,6 +16,12 @@ const MARK_TITLES: Record<CycleMark, string> = {
   refused: 'Refused',
   molt: 'Molt/Shed',
   extended: 'Extended',
+  'water-changed': 'W. Changed',
+  fed: 'Ate',
+}
+
+function recordLabel(cycle: FeedingCycle): string {
+  return cycle.tags.length ? cycle.tags.join(', ') : MARK_TITLES[cycle.mark]
 }
 
 function MarkIcon({ mark }: { mark: CycleMark }) {
@@ -31,6 +37,8 @@ function MarkIcon({ mark }: { mark: CycleMark }) {
               <path d="M6 4.2V6l1.3.9" />
             </>
           ) : null}
+          {mark === 'fed' ? <path d="M3.3 6.2l1.8 1.8 3.6-3.8" /> : null}
+          {mark === 'water-changed' ? <path d="M6 2.6c1.4 1.9 2.4 3.2 2.4 4.4a2.4 2.4 0 0 1-4.8 0c0-1.2 1-2.5 2.4-4.4Z" /> : null}
         </svg>
       )}
     </span>
@@ -75,6 +83,18 @@ export function MiniCalendar({
     month: initial.getMonth(),
   }))
   const [weekStart, setWeekStart] = useState(() => startOfWeek(today))
+  const [bubbleDay, setBubbleDay] = useState<string | null>(null)
+  const rootRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!bubbleDay) return
+    function close(event: PointerEvent) {
+      const cell = event.target instanceof Element ? event.target.closest('.calendar-cell.has-mark') : null
+      if (!cell || !rootRef.current?.contains(cell)) setBubbleDay(null)
+    }
+    document.addEventListener('pointerdown', close)
+    return () => document.removeEventListener('pointerdown', close)
+  }, [bubbleDay])
 
   useEffect(() => {
     if (!selectedDate) return
@@ -121,8 +141,9 @@ export function MiniCalendar({
     const isFed = cycles.some((cycle) => cycle.fed && cycle.fedDate === iso)
     const dayCycles = cycles.filter((cycle) => cycle.fedDate === iso)
     const mark = CYCLE_MARK_ORDER.find((item) => dayCycles.some((cycle) => cycle.mark === item)) ?? null
-    const markTags = dayCycles.filter((cycle) => cycle.mark === mark).flatMap((cycle) => cycle.tags)
-    const markTitle = mark === 'extended' && markTags.length ? markTags.join(', ') : mark ? MARK_TITLES[mark] : ''
+    const records = dayCycles.map(recordLabel)
+    const markTitle = records.join(' · ')
+    const showBubble = mark !== null && bubbleDay === iso
     const isDue = iso === nextDueDate
     const isSelected = iso === selectedDate
     const classes = [
@@ -133,15 +154,15 @@ export function MiniCalendar({
       isSelected ? 'is-selected' : '',
       tint ? 'has-cycle' : '',
       tint?.washed ? 'is-preview' : '',
+      mark ? 'has-mark' : '',
+      showBubble ? 'is-bubble' : '',
     ]
       .filter(Boolean)
       .join(' ')
 
-    const title = isFed
-      ? 'Fed'
-      : mark
-        ? markTitle
-        : isDue
+    const title = mark
+      ? undefined
+      : isDue
         ? 'Next feeding'
         : tint?.washed
           ? 'Upcoming cycle'
@@ -160,8 +181,21 @@ export function MiniCalendar({
       <>
         <span className="day-num">{day}</span>
         {mark ? <MarkIcon mark={mark} /> : null}
+        {showBubble ? (
+          <span className={`calendar-bubble is-col-${parseISO(iso).getDay()}`} role="tooltip">
+            {records.map((label, index) => (
+              <span key={index} className="calendar-bubble-line">
+                {label}
+              </span>
+            ))}
+          </span>
+        ) : null}
       </>
     )
+
+    function toggleBubble() {
+      if (mark) setBubbleDay((current) => (current === iso ? null : iso))
+    }
 
     if (onSelectDate) {
       return (
@@ -171,7 +205,27 @@ export function MiniCalendar({
           className={classes}
           style={style}
           title={title}
-          onClick={() => onSelectDate(iso)}
+          aria-label={mark ? `${day}: ${markTitle}` : undefined}
+          onClick={() => {
+            toggleBubble()
+            onSelectDate(iso)
+          }}
+        >
+          {inner}
+        </button>
+      )
+    }
+
+    if (mark) {
+      return (
+        <button
+          key={key}
+          type="button"
+          className={classes}
+          style={style}
+          aria-label={`${day}: ${markTitle}`}
+          aria-expanded={showBubble}
+          onClick={toggleBubble}
         >
           {inner}
         </button>
@@ -187,7 +241,7 @@ export function MiniCalendar({
 
   if (compactWeeks) {
     return (
-      <div className="calendar is-weeks">
+      <div className="calendar is-weeks" ref={rootRef}>
         <div className="calendar-nav">
           <button type="button" className="icon-btn" onClick={() => setWeekStart(addDays(weekStart, -7))} aria-label="Previous week">
             <CalendarChevron dir="prev" />
@@ -232,7 +286,7 @@ export function MiniCalendar({
   }
 
   return (
-    <div className="calendar">
+    <div className="calendar" ref={rootRef}>
       <div className="calendar-nav">
         <button type="button" className="icon-btn" onClick={() => shiftMonth(-1)} aria-label="Previous month">
           <CalendarChevron dir="prev" />
