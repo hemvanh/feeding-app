@@ -102,13 +102,14 @@ button:focus-visible {
   font-weight: 400;
   letter-spacing: 0.03em;
   line-height: 1;
+  filter: drop-shadow(0 2px 0 rgba(40, 30, 10, 0.7)) drop-shadow(0 0 8px rgba(0, 0, 0, 0.35));
   animation: brand-glow 2.4s ease-in-out 1 forwards;
 }
 
 .brand-letter {
   display: inline-block;
   transform-origin: 50% 80%;
-  background: linear-gradient(180deg, #7a1810 0%, #1d5c34 100%);
+  background: linear-gradient(180deg, #f3e7c0 0%, #ecc964 45%, #cf8f2c 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -123,8 +124,8 @@ button:focus-visible {
 }
 
 @keyframes brand-glow {
-  0%, 100% { filter: drop-shadow(0 0 4px rgba(122, 24, 16, 0.35)); }
-  50% { filter: drop-shadow(0 0 16px rgba(29, 92, 52, 0.85)) drop-shadow(0 0 8px rgba(122, 24, 16, 0.55)); }
+  0%, 100% { filter: drop-shadow(0 2px 0 rgba(40, 30, 10, 0.7)) drop-shadow(0 0 8px rgba(0, 0, 0, 0.35)); }
+  50% { filter: drop-shadow(0 2px 0 rgba(40, 30, 10, 0.7)) drop-shadow(0 0 14px rgba(236, 201, 100, 0.75)); }
 }
 
 @media (prefers-reduced-motion: reduce) {
