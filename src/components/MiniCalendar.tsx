@@ -9,7 +9,33 @@ import {
   todayISO,
   weekdayLabels,
 } from '../utils/dates'
-import { cycleColor, type FeedingCycle } from '../utils/schedule'
+import { CYCLE_MARK_ORDER, cycleColor, type CycleMark, type FeedingCycle } from '../utils/schedule'
+
+const MARK_TITLES: Record<CycleMark, string> = {
+  regurgitated: 'Regurgitated',
+  refused: 'Refused',
+  molt: 'Molt/Shed',
+  extended: 'Extended',
+}
+
+function MarkIcon({ mark }: { mark: CycleMark }) {
+  return (
+    <span className={`calendar-mark is-${mark}`} aria-hidden="true">
+      {mark === 'molt' ? null : (
+        <svg viewBox="0 0 12 12">
+          {mark === 'refused' ? <path d="M3.5 3.5l5 5M8.5 3.5l-5 5" /> : null}
+          {mark === 'regurgitated' ? <path d="M3.2 6.5a2.9 2.9 0 1 0 1-2.4M3.6 2.4v2h2" /> : null}
+          {mark === 'extended' ? (
+            <>
+              <circle cx="6" cy="6" r="3.4" />
+              <path d="M6 4.2V6l1.3.9" />
+            </>
+          ) : null}
+        </svg>
+      )}
+    </span>
+  )
+}
 
 type MiniCalendarProps = {
   cycles: FeedingCycle[]
@@ -92,7 +118,11 @@ export function MiniCalendar({
     if (!iso) return <div key={key} />
     const tint = cycleColor(iso, cycles, today)
     const isToday = iso === today
-    const isFed = cycles.some((cycle) => cycle.fedDate === iso)
+    const isFed = cycles.some((cycle) => cycle.fed && cycle.fedDate === iso)
+    const dayCycles = cycles.filter((cycle) => cycle.fedDate === iso)
+    const mark = CYCLE_MARK_ORDER.find((item) => dayCycles.some((cycle) => cycle.mark === item)) ?? null
+    const markTags = dayCycles.filter((cycle) => cycle.mark === mark).flatMap((cycle) => cycle.tags)
+    const markTitle = mark === 'extended' && markTags.length ? markTags.join(', ') : mark ? MARK_TITLES[mark] : ''
     const isDue = iso === nextDueDate
     const isSelected = iso === selectedDate
     const classes = [
@@ -109,7 +139,9 @@ export function MiniCalendar({
 
     const title = isFed
       ? 'Fed'
-      : isDue
+      : mark
+        ? markTitle
+        : isDue
         ? 'Next feeding'
         : tint?.washed
           ? 'Upcoming cycle'
@@ -127,6 +159,7 @@ export function MiniCalendar({
     const inner = (
       <>
         <span className="day-num">{day}</span>
+        {mark ? <MarkIcon mark={mark} /> : null}
       </>
     )
 

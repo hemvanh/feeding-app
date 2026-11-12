@@ -798,6 +798,31 @@ input, select, textarea {
   text-decoration: underline;
   text-underline-offset: 2px;
 }
+.calendar-mark {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  z-index: 2;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 0 0 1.5px #fff;
+}
+.calendar-mark svg {
+  width: 10px;
+  height: 10px;
+  fill: none;
+  stroke: #fff;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.calendar-mark.is-refused { background: #d92d20; }
+.calendar-mark.is-regurgitated { background: #e8790c; }
+.calendar-mark.is-molt { background: #7c5cc4; width: 9px; height: 9px; top: 3px; right: 3px; }
+.calendar-mark.is-extended { background: #3a6ea5; }
 .calendar-cell.is-selected {
   outline: none;
   box-shadow: 0 0 0 3px #3b9eff;

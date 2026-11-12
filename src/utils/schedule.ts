@@ -1,4 +1,4 @@
-import { isSuccessfulOutcome, type FeedingEvent, type Pet, type PetSchedule } from '../types'
+import { isMoltTag, isSuccessfulOutcome, type FeedingEvent, type Pet, type PetSchedule } from '../types'
 import { addDays, daysBetween, todayISO } from './dates'
 
 function dueAfter(pet: Pet, event: FeedingEvent): string {
@@ -30,34 +30,45 @@ export function computeSchedule(
   return { lastFedDate, nextDueDate }
 }
 
+export type CycleMark = 'regurgitated' | 'refused' | 'molt' | 'extended'
+
+export const CYCLE_MARK_ORDER: CycleMark[] = ['regurgitated', 'refused', 'molt', 'extended']
+
 export type FeedingCycle = {
   fedDate: string
   dueDate: string
   untilDate: string | null
+  fed: boolean
+  mark: CycleMark | null
+  tags: string[]
+}
+
+function cycleMark(event: FeedingEvent): CycleMark | null {
+  if (event.outcome === 'regurgitated' || event.outcome === 'refused') return event.outcome
+  if (isSuccessfulOutcome(event.outcome)) return null
+  return (event.tags ?? []).some(isMoltTag) ? 'molt' : 'extended'
 }
 
 export function buildCycles(pet: Pet, events: FeedingEvent[]): FeedingCycle[] {
   const ordered = orderedEvents(events)
   const cycles: FeedingCycle[] = []
-  let current: { fedDate: string; dueDate: string } | null = null
+  let current: Omit<FeedingCycle, 'untilDate'> | null = null
 
   function closeCurrent(nextFeedDate: string | null) {
     if (!current) return
-    cycles.push({
-      fedDate: current.fedDate,
-      dueDate: current.dueDate,
-      untilDate: nextFeedDate,
-    })
+    cycles.push({ ...current, untilDate: nextFeedDate })
     current = null
   }
 
   for (const event of ordered) {
-    if (isSuccessfulOutcome(event.outcome)) {
-      closeCurrent(event.date)
-      current = { fedDate: event.date, dueDate: dueAfter(pet, event) }
-      continue
+    closeCurrent(event.date)
+    current = {
+      fedDate: event.date,
+      dueDate: dueAfter(pet, event),
+      fed: isSuccessfulOutcome(event.outcome),
+      mark: cycleMark(event),
+      tags: event.tags?.length ? event.tags : event.note?.trim() ? [event.note.trim()] : [],
     }
-    if (current) current.dueDate = dueAfter(pet, event)
   }
 
   closeCurrent(null)
