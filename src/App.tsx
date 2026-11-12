@@ -68,7 +68,7 @@ function waitForPageArrival() {
   if (!swap?.getAnimations) return Promise.resolve()
   const running = swap.getAnimations().some((anim) => {
     const name = 'animationName' in anim ? String(anim.animationName) : ''
-    return name.includes('page-in') && anim.playState === 'running'
+    return name === 'page-fade-in' && anim.playState === 'running'
   })
   if (!running) return Promise.resolve()
   return new Promise<void>((resolve) => {
@@ -209,19 +209,26 @@ function AppShell({
   const [menuOpen, setMenuOpen] = useState(false)
   const [menuMounted, setMenuMounted] = useState(false)
   const [menuClosing, setMenuClosing] = useState(false)
-  const [raised, setRaised] = useState(false)
+  const [dock, setDock] = useState({ view: homeView, raised: false })
+  const viewRef = useRef(homeView)
   const menuRef = useRef<HTMLDivElement>(null)
+  const dockStale = dock.view !== homeView
+  const raised = !dockStale && dock.raised
 
   useEffect(() => subscribeSync(() => setSyncTick((n) => n + 1)), [])
   useEffect(() => {
+    viewRef.current = homeView
     const onScroll = () => {
+      const view = viewRef.current
       const next = window.scrollY > 2
-      setRaised((current) => (current === next ? current : next))
+      setDock((current) =>
+        current.view === view && current.raised === next ? current : { view, raised: next },
+      )
     }
     onScroll()
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
-  }, [])
+  }, [homeView])
   useEffect(() => {
     setSyncOpen(!githubOk)
   }, [githubOk])
@@ -262,7 +269,7 @@ function AppShell({
 
   return (
     <div className="app">
-      <div className={raised ? 'topbar-dock is-raised' : 'topbar-dock'}>
+      <div className={`topbar-dock${raised ? ' is-raised' : ''}${dockStale ? ' is-snap' : ''}`}>
       <header className="topbar">
         {back ? (
           <button type="button" className="back-btn" onClick={() => go(back)}>
@@ -1323,7 +1330,7 @@ export default function App() {
     const timer = window.setTimeout(() => {
       setShown(route)
       setMotion('in')
-    }, 80)
+    }, 160)
     return () => window.clearTimeout(timer)
   }, [route, shown])
 

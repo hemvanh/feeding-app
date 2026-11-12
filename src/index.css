@@ -1,6 +1,5 @@
 :root {
-  --bg: #eef3ea;
-  --bg-2: #e3ebdc;
+  --bg: #778372;
   --ink: #1c2a1d;
   --muted: #5d6b5c;
   --card: #fbfdf7;
@@ -23,19 +22,6 @@
 }
 html, body, #root { min-height: 100%; margin: 0; }
 body { min-height: 100svh; overflow-x: clip; }
-body::before {
-  content: "";
-  position: fixed;
-  z-index: 0;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 400vh;
-  pointer-events: none;
-  background:
-    radial-gradient(circle at top left, #d7ead0 0, transparent 28%),
-    linear-gradient(180deg, var(--bg), var(--bg-2));
-}
 #root { position: relative; z-index: 1; }
 
 button, input, select, textarea {
@@ -76,14 +62,17 @@ button:focus-visible {
   pointer-events: none;
   background: linear-gradient(
     to bottom in srgb,
-    rgb(from var(--bg) r g b / 1),
-    rgb(from var(--bg) r g b / 0)
+    rgb(0 0 0 / 1),
+    rgb(0 0 0 / 0)
   );
   opacity: 0;
   transition: opacity 240ms ease;
 }
 .topbar-dock.is-raised::after {
   opacity: 1;
+}
+.topbar-dock.is-snap::after {
+  transition: none;
 }
 
 .topbar {
@@ -207,9 +196,9 @@ button:focus-visible {
 }
 .page-swap.is-out { pointer-events: none; }
 .page-swap.is-in.page-forward,
-.page-swap.is-in.page-back { animation: page-fade-in 150ms ease; }
+.page-swap.is-in.page-back { animation: page-fade-in 300ms ease; }
 .page-swap.is-out.page-forward,
-.page-swap.is-out.page-back { animation: page-fade-out 80ms ease forwards; }
+.page-swap.is-out.page-back { animation: page-fade-out 160ms ease forwards; }
 @keyframes page-fade-in {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -1458,8 +1447,6 @@ button.feeder-prep-chip.very-late.is-targeted {
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #121812;
-    --bg-2: #0e140f;
     --ink: #e8f0e5;
     --muted: #9aa894;
     --card: #1a231b;
@@ -1586,7 +1573,6 @@ body.is-qr-print::before { display: none; }
 
 @media print {
   .page-swap { animation: none !important; }
-  body::before { content: none !important; display: none !important; }
   .topbar-dock, .sync-bar { display: none !important; }
   .app { padding: 0 !important; width: auto; }
   html, body, #root, .page-swap, .app, .qr-print-page {
