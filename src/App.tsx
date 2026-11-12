@@ -3,7 +3,7 @@ import { CoverPhoto, CoverThumb } from './components/CoverPhoto'
 import { ConfirmDialog } from './components/ConfirmDialog'
 import { PetQrCode, PrintQrSticker } from './components/PetQrCode'
 import { QrScanner } from './components/QrScanner'
-import { ExtendForm, FeedingForm } from './components/FeedingForm'
+import { FeedingForm } from './components/FeedingForm'
 import { MiniCalendar } from './components/MiniCalendar'
 import { PetForm } from './components/PetForm'
 import { SexIcon } from './components/SexIcon'
@@ -13,7 +13,7 @@ import { db, newId } from './db'
 import { deleteGitHubFile, isGitHubConnected } from './github'
 import { getSyncStatus, subscribeSync } from './sync'
 import { useAllFeedings, useFeedings, usePet, usePets } from './hooks/useDb'
-import { FEEDER_TYPES, feederAmountUnit, feederSummary, isWaterChange, latestWeighing, formatGrams, outcomeLabel, petSexLabel, resultTagOutcome, type FeedingEvent, type FeedingOutcome, type Pet } from './types'
+import { FEEDER_TYPES, feederAmountUnit, feederSummary, isWaterChange, latestWeighing, formatGrams, outcomeLabel, petSexLabel, resultTagOutcome, tagPillClass, type FeedingEvent, type FeedingOutcome, type Pet } from './types'
 import { coverPhotoPath } from './utils/coverPhoto'
 import { petIdFromQrText } from './utils/petQr'
 import { qrInkForPets, type QrInk } from './utils/qrColors'
@@ -980,7 +980,6 @@ function PetPage({ id, back }: { id: string; back: string }) {
   const events = useFeedings(id)
   const schedule = pet ? computeSchedule(pet, events) : { lastFedDate: null, nextDueDate: null }
   const status = dueStatus(schedule.nextDueDate)
-  const [tab, setTab] = useState<'feed' | 'extend'>('feed')
   const [feedDate, setFeedDate] = useState(todayISO)
   const [pendingDelete, setPendingDelete] = useState<string | null>(null)
 
@@ -1032,39 +1031,19 @@ function PetPage({ id, back }: { id: string; back: string }) {
       back={back}
       actions={
         <div className="tabs">
-          <button type="button" className={tab === 'feed' ? 'on' : ''} onClick={() => setTab('feed')}>
-            Feed !
-          </button>
-          <button type="button" className={tab === 'extend' ? 'on' : ''} onClick={() => setTab('extend')}>
-            Extend
-          </button>
+          <span className="on">Feed !</span>
         </div>
       }
     >
       <section className="panel">
-        {tab === 'feed' ? (
-          <FeedingForm
-            date={feedDate}
-            defaultOutcome={isWaterChange(pet.feederType) ? 'water-changed' : 'fed'}
-            onSubmit={async (data) => {
-              await saveEvent(data)
-              go('/pending')
-            }}
-          />
-        ) : (
-          <ExtendForm
-            defaultDays={3}
-            onSubmit={async (days, note) => {
-              await saveEvent({
-                date: todayISO(),
-                note,
-                outcome: 'extended',
-                extensionDays: days,
-              })
-              go('/pending')
-            }}
-          />
-        )}
+        <FeedingForm
+          date={feedDate}
+          defaultOutcome={isWaterChange(pet.feederType) ? 'water-changed' : 'fed'}
+          onSubmit={async (data) => {
+            await saveEvent(data)
+            go('/pending')
+          }}
+        />
       </section>
 
       <section className="panel">
@@ -1073,10 +1052,7 @@ function PetPage({ id, back }: { id: string; back: string }) {
           cycles={buildCycles(pet, events)}
           nextDueDate={schedule.nextDueDate}
           selectedDate={feedDate}
-          onSelectDate={(iso) => {
-            setFeedDate(iso)
-            setTab('feed')
-          }}
+          onSelectDate={setFeedDate}
         />
       </section>
 
@@ -1103,30 +1079,8 @@ function PetPage({ id, back }: { id: string; back: string }) {
           <ul className="history">
             {events.map((event) => (
               <li key={event.id}>
-                <div>
-                  <strong>{formatPretty(event.date)}</strong>
-                  {(event.tags?.length ? event.tags : [outcomeLabel(event.outcome)]).map((tag) => {
-                    const standard = resultTagOutcome(tag)
-                    return (
-                      <span key={tag} className={`pill ${standard ?? 'custom'}`}>
-                        {tag}
-                      </span>
-                    )
-                  })}
-                </div>
-                {event.extensionDays > 0 ? (
-                  <p className="muted">
-                    Extended by {event.extensionDays} day{event.extensionDays === 1 ? '' : 's'}
-                  </p>
-                ) : null}
-                {event.tags?.length ? null : event.note ? <p>{event.note}</p> : null}
-                <button
-                  type="button"
-                  className="text-btn"
-                  onClick={() => setPendingDelete(event.id)}
-                >
-                  Remove
-                </button>
+                <HistoryEntry event={event} />
+                <RemoveFeedingButton onClick={() => setPendingDelete(event.id)} />
               </li>
             ))}
           </ul>
@@ -1148,6 +1102,40 @@ function PetPage({ id, back }: { id: string; back: string }) {
   )
 }
 
+function HistoryEntry({ event }: { event: FeedingEvent }) {
+  const tags = event.tags?.length ? event.tags : [outcomeLabel(event.outcome)]
+  const legacyNote = (event.tags ?? []).filter((tag) => !resultTagOutcome(tag)).join(' · ')
+  const note = event.note && !(event.tags?.length && event.note === legacyNote) ? event.note : ''
+  return (
+    <>
+      <div>
+        <strong>{formatPretty(event.date)}</strong>
+        {tags.map((tag) => (
+          <span key={tag} className={`pill ${tagPillClass(tag)}`}>
+            {tag}
+          </span>
+        ))}
+      </div>
+      {event.extensionDays > 0 ? (
+        <p className="muted">
+          Extended by {event.extensionDays} day{event.extensionDays === 1 ? '' : 's'}
+        </p>
+      ) : null}
+      {note ? <p>{note}</p> : null}
+    </>
+  )
+}
+
+function RemoveFeedingButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button type="button" className="history-remove" aria-label="Delete this feeding" onClick={onClick}>
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M6 6l12 12M18 6L6 18" />
+      </svg>
+    </button>
+  )
+}
+
 function PetDetailsPage({ id }: { id: string }) {
   const { pet, loaded } = usePet(id)
   const events = useFeedings(id)
@@ -1155,6 +1143,7 @@ function PetDetailsPage({ id }: { id: string }) {
   const status = dueStatus(schedule.nextDueDate)
   const fedToday = wasFedToday(schedule.lastFedDate)
   const weight = pet ? latestWeighing(pet.weighings) : null
+  const [pendingDelete, setPendingDelete] = useState<string | null>(null)
 
   useLayoutEffect(() => {
     window.scrollTo(0, 0)
@@ -1211,23 +1200,8 @@ function PetDetailsPage({ id }: { id: string }) {
           <ul className="history">
             {events.map((event) => (
               <li key={event.id}>
-                <div>
-                  <strong>{formatPretty(event.date)}</strong>
-                  {(event.tags?.length ? event.tags : [outcomeLabel(event.outcome)]).map((tag) => {
-                    const standard = resultTagOutcome(tag)
-                    return (
-                      <span key={tag} className={`pill ${standard ?? 'custom'}`}>
-                        {tag}
-                      </span>
-                    )
-                  })}
-                </div>
-                {event.extensionDays > 0 ? (
-                  <p className="muted">
-                    Extended by {event.extensionDays} day{event.extensionDays === 1 ? '' : 's'}
-                  </p>
-                ) : null}
-                {event.tags?.length ? null : event.note ? <p>{event.note}</p> : null}
+                <HistoryEntry event={event} />
+                <RemoveFeedingButton onClick={() => setPendingDelete(event.id)} />
               </li>
             ))}
           </ul>
@@ -1237,6 +1211,18 @@ function PetDetailsPage({ id }: { id: string }) {
       <section className="panel">
         <WeightTracker pet={pet} readOnly />
       </section>
+      {pendingDelete ? (
+        <ConfirmDialog
+          title="Delete this feeding?"
+          message="This record will be removed from the history. This cannot be undone."
+          onCancel={() => setPendingDelete(null)}
+          onConfirm={() => {
+            const id = pendingDelete
+            setPendingDelete(null)
+            void db.feedings.delete(id)
+          }}
+        />
+      ) : null}
     </AppShell>
   )
 }

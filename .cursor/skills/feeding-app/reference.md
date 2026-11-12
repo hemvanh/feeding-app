@@ -38,9 +38,9 @@ Cover images are not inside the JSON. `Pet.coverAt` is a numeric stamp. The imag
 
 `computeSchedule` walks events by date, then `createdAt`.
 
-- `fed` or `water-changed`: last fed becomes that date, next due is that date plus `feedingPeriodDays`.
-- Other outcomes add `extensionDays` to the current due date (or to the event date if there is no due date yet).
-- Default extensions in the form: refused 1 day, regurgitated 2.
+- `fed` or `water-changed`: last fed becomes that date.
+- Every record resets next due: event date plus `extensionDays` if it is above 0 (Extend checked), otherwise event date plus `feedingPeriodDays`.
+- Default extensions in the form: refused 1 day, regurgitated 2, molt 7, manual 3.
 - Prepare urgency skips pets already fed today. Groups sort by `FEEDER_TYPES`, then name. Unknown types sort after the presets and before `Unspecified`.
 
 ## Routes

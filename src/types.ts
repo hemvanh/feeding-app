@@ -44,9 +44,9 @@ export function outcomeLabel(outcome: FeedingOutcome): string {
 
 export const RESULT_TAGS = [
   { outcome: 'fed', label: 'Ate' },
+  { outcome: 'water-changed', label: 'W. Changed' },
   { outcome: 'refused', label: 'Refused' },
   { outcome: 'regurgitated', label: 'Regurg.' },
-  { outcome: 'water-changed', label: 'W. Changed' },
 ] as const
 
 const RESULT_TAG_ALIASES: Record<string, FeedingOutcome> = {
@@ -62,11 +62,24 @@ export function resultTagOutcome(label: string): FeedingOutcome | null {
   return RESULT_TAG_ALIASES[label.trim().toLowerCase()] ?? null
 }
 
-export function outcomeFromResultTags(labels: string[]): FeedingOutcome {
+export const MOLT_TAG = 'Molt/Shed'
+
+export function isMoltTag(label: string): boolean {
+  const key = label.trim().toLowerCase()
+  return key === 'molt/shed' || key === 'molt' || key === 'shed'
+}
+
+export function tagPillClass(label: string): string {
+  return resultTagOutcome(label) ?? (isMoltTag(label) ? 'molt' : 'custom')
+}
+
+export function outcomeFromResultTags(labels: string[], extending = false): FeedingOutcome {
   const selected = new Set(labels.map((label) => resultTagOutcome(label)).filter((outcome) => outcome !== null))
   if (selected.has('regurgitated')) return 'regurgitated'
   if (selected.has('refused')) return 'refused'
   if (selected.has('water-changed')) return 'water-changed'
+  if (selected.has('fed')) return 'fed'
+  if (extending || labels.some(isMoltTag)) return 'extended'
   return 'fed'
 }
 

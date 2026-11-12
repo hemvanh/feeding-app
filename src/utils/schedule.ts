@@ -1,6 +1,11 @@
 import { isSuccessfulOutcome, type FeedingEvent, type Pet, type PetSchedule } from '../types'
 import { addDays, daysBetween, todayISO } from './dates'
 
+function dueAfter(pet: Pet, event: FeedingEvent): string {
+  const extra = event.extensionDays || 0
+  return addDays(event.date, extra > 0 ? extra : pet.feedingPeriodDays)
+}
+
 function orderedEvents(events: FeedingEvent[]): FeedingEvent[] {
   return [...events].sort((a, b) => {
     if (a.date !== b.date) return a.date.localeCompare(b.date)
@@ -18,17 +23,8 @@ export function computeSchedule(
   let nextDueDate: string | null = null
 
   for (const event of ordered) {
-    if (isSuccessfulOutcome(event.outcome)) {
-      lastFedDate = event.date
-      nextDueDate = addDays(event.date, pet.feedingPeriodDays)
-      continue
-    }
-
-    const extra = event.extensionDays || 0
-    if (extra <= 0) continue
-
-    const base = nextDueDate && nextDueDate >= event.date ? nextDueDate : event.date
-    nextDueDate = addDays(base, extra)
+    if (isSuccessfulOutcome(event.outcome)) lastFedDate = event.date
+    nextDueDate = dueAfter(pet, event)
   }
 
   return { lastFedDate, nextDueDate }
@@ -58,18 +54,10 @@ export function buildCycles(pet: Pet, events: FeedingEvent[]): FeedingCycle[] {
   for (const event of ordered) {
     if (isSuccessfulOutcome(event.outcome)) {
       closeCurrent(event.date)
-      current = {
-        fedDate: event.date,
-        dueDate: addDays(event.date, pet.feedingPeriodDays),
-      }
+      current = { fedDate: event.date, dueDate: dueAfter(pet, event) }
       continue
     }
-
-    const extra = event.extensionDays || 0
-    if (extra <= 0 || !current) continue
-
-    const base = current.dueDate >= event.date ? current.dueDate : event.date
-    current.dueDate = addDays(base, extra)
+    if (current) current.dueDate = dueAfter(pet, event)
   }
 
   closeCurrent(null)

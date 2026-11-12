@@ -708,6 +708,7 @@ input, select, textarea {
 .badge.today { background: #fff4d6; color: var(--amber); }
 .badge.overdue, .pill.refused, .pill.regurgitated { background: #fde8e6; color: var(--red); }
 .badge.none, .pill.extended { background: #eef1ea; color: var(--muted); }
+.pill.molt { background: #ece6f7; color: #5b4a86; }
 
 .calendar { display: grid; gap: 10px; }
 .calendar.is-weeks {
@@ -889,6 +890,10 @@ button.calendar-cell {
   color: #fff;
   border-color: var(--green-2);
 }
+.tag-field.is-extend .choice.on {
+  background: #c8372b;
+  border-color: var(--red);
+}
 .choice input { display: none; }
 .tag-field {
   display: flex;
@@ -912,6 +917,45 @@ button.calendar-cell {
   background: transparent;
 }
 .tag-field input:focus { outline: none; }
+.extend-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.extend-row label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.extend-toggle {
+  font-weight: 650;
+  cursor: pointer;
+}
+.extend-toggle input {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  padding: 0;
+  accent-color: var(--green);
+  cursor: pointer;
+}
+.extend-days input {
+  width: 4.5rem;
+  padding: 8px 10px;
+  text-align: center;
+}
+.extend-days span { color: var(--muted); }
+.extend-note {
+  flex: 1 1 10rem;
+  width: auto;
+  min-width: 0;
+  padding: 8px 12px;
+}
+.extend-row input:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
 .custom-tag {
   display: inline-flex;
   align-items: center;
@@ -960,6 +1004,12 @@ button.calendar-cell {
   cursor: pointer;
 }
 .tabs button.on { background: var(--green); color: #fff; }
+.tabs > span.on {
+  border-radius: 999px;
+  padding: 8px 12px;
+  background: var(--green);
+  color: #fff;
+}
 
 .history {
   list-style: none;
@@ -972,10 +1022,40 @@ button.calendar-cell {
   border-top: 1px solid var(--line);
   padding-top: 12px;
   display: grid;
-  gap: 4px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 8px;
+  row-gap: 4px;
 }
+.history li > * { grid-column: 1; }
 .history li:first-child { border-top: 0; padding-top: 0; }
 .history li div { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.history li > .history-remove {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: center;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: #e5483a;
+  cursor: pointer;
+}
+.history-remove svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.6;
+  stroke-linecap: round;
+}
+.history-remove:hover,
+.history-remove:focus-visible {
+  background: color-mix(in srgb, #e5483a 16%, transparent);
+}
 
 .pet-hero { display: grid; gap: 8px; }
 .pet-identity {
@@ -1474,6 +1554,10 @@ button.feeder-prep-chip.very-late.is-targeted {
     background: var(--green);
     color: #fff;
     border-color: #8fd4a4;
+  }
+  .tag-field.is-extend .choice.on {
+    background: #c8372b;
+    border-color: #f08a7f;
   }
   .calendar-cell { background: #152016; }
   .cover-thumb,
