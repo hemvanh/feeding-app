@@ -857,9 +857,9 @@ function HomePage({ view }: { view: 'pets' | 'pending' }) {
                     </svg>
                   </button>
                 </div>
-                <div className="pet-card-titles">
+                <div className="pet-card-titles" onClick={() => go(`/pet/${pet.id}/details`)}>
                   <h2>
-                    <button type="button" className="pet-name-open" onClick={() => go(`/pet/${pet.id}/details`)}>
+                    <button type="button" className="pet-name-open">
                       {pet.name}
                     </button>
                   </h2>
@@ -1049,6 +1049,7 @@ function PetPage({ id, back }: { id: string; back: string }) {
       <section className="panel">
         <MiniCalendar
           compactWeeks
+          resizable
           cycles={buildCycles(pet, events)}
           nextDueDate={schedule.nextDueDate}
           selectedDate={feedDate}
@@ -1189,7 +1190,7 @@ function PetDetailsPage({ id }: { id: string }) {
       </section>
 
       <section className="panel">
-        <MiniCalendar compactWeeks cycles={buildCycles(pet, events)} nextDueDate={schedule.nextDueDate} />
+        <MiniCalendar compactWeeks resizable cycles={buildCycles(pet, events)} nextDueDate={schedule.nextDueDate} />
       </section>
 
       <section className="panel">

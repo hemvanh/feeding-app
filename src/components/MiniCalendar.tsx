@@ -45,7 +45,35 @@ function MarkIcon({ mark }: { mark: CycleMark }) {
   )
 }
 
+type CalendarSize = 'weeks' | 'month' | 'two-months'
+
+function SizeIcon({ grow }: { grow: boolean }) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d={
+          grow
+            ? 'M14 4h6v6M20 4l-6.5 6.5M10 20H4v-6M4 20l6.5-6.5'
+            : 'M20 10h-6V4M14 10l6.5-6.5M4 14h6v6M10 14l-6.5 6.5'
+        }
+      />
+    </svg>
+  )
+}
+
+function cellsForMonth(year: number, month: number): (string | null)[] {
+  const leading = Array.from({ length: new Date(year, month, 1).getDay() }, () => null)
+  const daysInMonth = new Date(year, month + 1, 0).getDate()
+  return [...leading, ...Array.from({ length: daysInMonth }, (_, i) => formatISO(new Date(year, month, i + 1)))]
+}
+
 type MiniCalendarProps = {
+  resizable?: boolean
   cycles: FeedingCycle[]
   nextDueDate: string | null
   selectedDate?: string
@@ -74,6 +102,7 @@ export function MiniCalendar({
   selectedDate,
   onSelectDate,
   compactWeeks = false,
+  resizable = false,
 }: MiniCalendarProps) {
   const today = todayISO()
   const lastFedDate = cycles.at(-1)?.fedDate ?? null
@@ -84,7 +113,13 @@ export function MiniCalendar({
   }))
   const [weekStart, setWeekStart] = useState(() => startOfWeek(today))
   const [bubbleDay, setBubbleDay] = useState<string | null>(null)
+  const [size, setSize] = useState<CalendarSize>(compactWeeks ? 'weeks' : 'month')
+  const [fade, setFade] = useState<'idle' | 'out' | 'in'>('idle')
+  const fadeClass = fade === 'idle' ? '' : ` is-fade-${fade}`
+  const fadeTimer = useRef<number | undefined>(undefined)
   const rootRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => () => window.clearTimeout(fadeTimer.current), [])
 
   useEffect(() => {
     if (!bubbleDay) return
@@ -103,16 +138,13 @@ export function MiniCalendar({
     setWeekStart(startOfWeek(selectedDate))
   }, [selectedDate])
 
-  const monthCells = useMemo(() => {
-    const first = new Date(cursor.year, cursor.month, 1)
-    const startWeekday = first.getDay()
-    const daysInMonth = new Date(cursor.year, cursor.month + 1, 0).getDate()
-    const leading = Array.from({ length: startWeekday }, () => null)
-    const monthDays = Array.from({ length: daysInMonth }, (_, i) =>
-      formatISO(new Date(cursor.year, cursor.month, i + 1)),
-    )
-    return [...leading, ...monthDays]
-  }, [cursor])
+  const shownMonths = useMemo(() => {
+    const count = size === 'two-months' ? 2 : 1
+    return Array.from({ length: count }, (_, i) => {
+      const date = new Date(cursor.year, cursor.month + i, 1)
+      return { year: date.getFullYear(), month: date.getMonth() }
+    })
+  }, [cursor, size])
 
   const weekCells = useMemo(
     () => Array.from({ length: 14 }, (_, i) => addDays(weekStart, i)),
@@ -132,6 +164,87 @@ export function MiniCalendar({
   function shiftMonth(delta: number) {
     const date = new Date(cursor.year, cursor.month + delta, 1)
     setCursor({ year: date.getFullYear(), month: date.getMonth() })
+  }
+
+  function resize(next: CalendarSize) {
+    if (fade !== 'idle') return
+    setBubbleDay(null)
+    setFade('out')
+    fadeTimer.current = window.setTimeout(() => {
+      applySize(next)
+      setFade('in')
+      fadeTimer.current = window.setTimeout(() => setFade('idle'), 220)
+    }, 140)
+  }
+
+  function applySize(next: CalendarSize) {
+    if (size === 'weeks') {
+      const middle = parseISO(addDays(weekStart, 6))
+      setCursor({ year: middle.getFullYear(), month: middle.getMonth() })
+    } else if (next === 'weeks') {
+      const anchor = [selectedDate, today].find((iso) => {
+        if (!iso) return false
+        const date = parseISO(iso)
+        return date.getFullYear() === cursor.year && date.getMonth() === cursor.month
+      })
+      setWeekStart(startOfWeek(anchor ?? formatISO(new Date(cursor.year, cursor.month, 1))))
+    }
+    setSize(next)
+  }
+
+  function sizeButton(next: CalendarSize, grow: boolean, label: string) {
+    return (
+      <button key={next} type="button" className="calendar-size-btn" onClick={() => resize(next)} aria-label={label} title={label}>
+        <SizeIcon grow={grow} />
+      </button>
+    )
+  }
+
+  function renderFooter() {
+    const sizeButtons = !resizable
+      ? null
+      : size === 'weeks'
+        ? [sizeButton('month', true, 'Show full month')]
+        : size === 'month'
+          ? [sizeButton('weeks', false, 'Show 2 weeks'), sizeButton('two-months', true, 'Show 2 months')]
+          : [sizeButton('month', false, 'Show 1 month')]
+    return (
+      <>
+        <div className="calendar-legend">
+          <span>
+            <i className="swatch fed" /> Fed
+          </span>
+          <span className="legend-gradient" aria-hidden />
+          <span>
+            <i className="swatch due" /> Next feeding
+          </span>
+        </div>
+        {onSelectDate ? (
+          <div className="calendar-legend marks">
+            <span>
+              <i className="mark today" /> Today
+            </span>
+            <span>
+              <i className="mark selected" /> Selected
+            </span>
+          </div>
+        ) : null}
+        {sizeButtons ? <div className="calendar-size">{sizeButtons}</div> : null}
+      </>
+    )
+  }
+
+  function renderGrid(cells: (string | null)[], keyPrefix: string) {
+    return (
+      <div className="calendar-grid">
+        {weekdayLabels().map((label, i) => (
+          <div key={`${label}-${i}`} className="calendar-dow">
+            {label}
+          </div>
+        ))}
+        {cells.map((iso, i) => renderDay(iso, iso ?? `${keyPrefix}-empty-${i}`))}
+      </div>
+    )
   }
 
   function renderDay(iso: string | null, key: string): ReactNode {
@@ -239,9 +352,9 @@ export function MiniCalendar({
     )
   }
 
-  if (compactWeeks) {
+  if (size === 'weeks') {
     return (
-      <div className="calendar is-weeks" ref={rootRef}>
+      <div className={`calendar is-weeks${fadeClass}`} ref={rootRef}>
         <div className="calendar-nav">
           <button type="button" className="icon-btn" onClick={() => setWeekStart(addDays(weekStart, -7))} aria-label="Previous week">
             <CalendarChevron dir="prev" />
@@ -254,39 +367,14 @@ export function MiniCalendar({
             <CalendarChevron dir="next" />
           </button>
         </div>
-        <div className="calendar-grid">
-          {weekdayLabels().map((label, i) => (
-            <div key={`${label}-${i}`} className="calendar-dow">
-              {label}
-            </div>
-          ))}
-          {weekCells.map((iso) => renderDay(iso, iso))}
-        </div>
-        <div className="calendar-legend">
-          <span>
-            <i className="swatch fed" /> Fed
-          </span>
-          <span className="legend-gradient" aria-hidden />
-          <span>
-            <i className="swatch due" /> Next feeding
-          </span>
-        </div>
-        {onSelectDate ? (
-          <div className="calendar-legend marks">
-            <span>
-              <i className="mark today" /> Today
-            </span>
-            <span>
-              <i className="mark selected" /> Selected
-            </span>
-          </div>
-        ) : null}
+        {renderGrid(weekCells, 'weeks')}
+        {renderFooter()}
       </div>
     )
   }
 
   return (
-    <div className="calendar" ref={rootRef}>
+    <div className={`calendar${fadeClass}`} ref={rootRef}>
       <div className="calendar-nav">
         <button type="button" className="icon-btn" onClick={() => shiftMonth(-1)} aria-label="Previous month">
           <CalendarChevron dir="prev" />
@@ -296,33 +384,13 @@ export function MiniCalendar({
           <CalendarChevron dir="next" />
         </button>
       </div>
-      <div className="calendar-grid">
-        {weekdayLabels().map((label, i) => (
-          <div key={`${label}-${i}`} className="calendar-dow">
-            {label}
-          </div>
-        ))}
-        {monthCells.map((iso, i) => renderDay(iso, iso ?? `empty-${i}`))}
-      </div>
-      <div className="calendar-legend">
-        <span>
-          <i className="swatch fed" /> Fed
-        </span>
-        <span className="legend-gradient" aria-hidden />
-        <span>
-          <i className="swatch due" /> Next feeding
-        </span>
-      </div>
-      {onSelectDate ? (
-        <div className="calendar-legend marks">
-          <span>
-            <i className="mark today" /> Today
-          </span>
-          <span>
-            <i className="mark selected" /> Selected
-          </span>
+      {shownMonths.map(({ year, month }, index) => (
+        <div key={`${year}-${month}`} className="calendar-month">
+          {index > 0 ? <p className="calendar-month-label">{monthLabel(year, month)}</p> : null}
+          {renderGrid(cellsForMonth(year, month), `${year}-${month}`)}
         </div>
-      ) : null}
+      ))}
+      {renderFooter()}
     </div>
   )
 }

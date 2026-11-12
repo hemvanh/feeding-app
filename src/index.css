@@ -473,6 +473,7 @@ main {
   grid-template-columns: minmax(0, 1fr) auto;
   column-gap: 10px;
   align-items: start;
+  cursor: pointer;
 }
 
 .pet-card-head h2 {
@@ -919,6 +920,54 @@ button.calendar-cell {
   grid-template-columns: none;
   justify-content: flex-start;
   gap: 16px;
+}
+.calendar:has(> .calendar-size) { position: relative; }
+.panel:has(> .calendar > .calendar-size) { margin-bottom: 14px; }
+/* Centred on the panel's bottom border: 16px padding + 1px border + half the 32px button. */
+.calendar-size {
+  position: absolute;
+  right: 0;
+  bottom: -33px;
+  z-index: 3;
+  display: flex;
+  gap: 8px;
+}
+.calendar-size-btn {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  display: inline-grid;
+  place-items: center;
+  background: #fff;
+  color: var(--ink);
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+@media (prefers-color-scheme: dark) {
+  .calendar-size-btn { background: #3a4f40; }
+}
+.calendar.is-fade-out > :not(.calendar-size) { animation: calendar-fade-out 140ms ease forwards; }
+.calendar.is-fade-in > :not(.calendar-size) { animation: calendar-fade-in 220ms ease; }
+@keyframes calendar-fade-out {
+  to { opacity: 0; }
+}
+@keyframes calendar-fade-in {
+  from { opacity: 0; }
+}
+.calendar-size-btn svg {
+  width: 17px;
+  height: 17px;
+}
+.calendar-month {
+  display: grid;
+  gap: 6px;
+}
+.calendar-month-label {
+  margin: 6px 0 0;
+  text-align: center;
+  font-weight: 650;
 }
 .mark {
   display: inline-block;
