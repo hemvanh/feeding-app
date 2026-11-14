@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-11-14T10:12:34.712Z",
+  "updatedAt": "2026-11-14T10:12:44.223Z",
   "pets": [
     {
       "id": "0865826f-79d8-4d0a-a6ee-926ab13c6346",
@@ -58,7 +58,8 @@
       "feedingPeriodDays": 5,
       "feederType": "Pate",
       "feederWeightGrams": 50,
-      "createdAt": "2026-11-14T10:12:34.454Z"
+      "createdAt": "2026-11-14T10:12:34.454Z",
+      "coverAt": "1794651160705"
     },
     {
       "id": "2617b4a8-d538-4874-b46d-cc72e8def7dd",
