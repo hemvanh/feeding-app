@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-11-12T18:13:02.526Z",
+  "updatedAt": "2026-11-14T10:12:34.712Z",
   "pets": [
     {
       "id": "0865826f-79d8-4d0a-a6ee-926ab13c6346",
@@ -46,6 +46,19 @@
       "feederType": "Mouse",
       "feederWeightGrams": 10,
       "sex": "unsexed"
+    },
+    {
+      "id": "24562c55-b620-4271-bab0-01bf39f3e3e5",
+      "name": "BTS",
+      "species": "Blue Tongue Skink",
+      "morphs": [
+        "Normal / Wild Type"
+      ],
+      "sex": "male",
+      "feedingPeriodDays": 5,
+      "feederType": "Pate",
+      "feederWeightGrams": 50,
+      "createdAt": "2026-11-14T10:12:34.454Z"
     },
     {
       "id": "2617b4a8-d538-4874-b46d-cc72e8def7dd",
