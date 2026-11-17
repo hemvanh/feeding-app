@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-11-17T07:02:38.620Z",
+  "updatedAt": "2026-11-17T07:03:11.542Z",
   "pets": [
     {
       "id": "0865826f-79d8-4d0a-a6ee-926ab13c6346",
@@ -248,7 +248,7 @@
       "feederType": "Neems",
       "feederWeightGrams": 2,
       "createdAt": "2026-11-17T07:02:25.600Z",
-      "coverAt": "1794898955538"
+      "coverAt": "1794898988436"
     },
     {
       "id": "a06c4a8c-9e6e-4375-a13e-4122fad28332",
