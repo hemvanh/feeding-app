@@ -26,7 +26,7 @@ Stay on `dev` unless publishing. The short branch rule in `.cursor/rules/branch-
 
 ## Publish all / deploy all
 
-Do this in order without asking again. Skip an empty `dev` commit when the tree is clean; still build and update `main` if the live site needs that build.
+**publish all** and **deploy all** are interchangeable. Either phrase runs this same procedure, in order, without asking again. Skip an empty `dev` commit when the tree is clean; still build and update `main` if the live site needs that build.
 
 1. On `dev`, stage only the relevant source changes, commit, and `git push origin dev`.
 2. On `dev`, run `npm run build`.

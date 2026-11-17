@@ -1,11 +1,11 @@
 ---
-description: feeding-app only — Pages main vs source dev, and the publish all phrase
+description: feeding-app only — Pages main vs source dev, and the publish all / deploy all phrases
 alwaysApply: true
 ---
 
 # Scope
 
-This rule applies **only** to this project: the local Feeding App workspace and GitHub repo `hemvanh/feeding-app`. Do not use these branch roles or the **publish all** phrase in any other repo.
+This rule applies **only** to this project: the local Feeding App workspace and GitHub repo `hemvanh/feeding-app`. Do not use these branch roles or the **publish all** / **deploy all** phrases in any other repo.
 
 # Branch roles
 
@@ -18,9 +18,9 @@ When publishing: `npm run build` on `dev`, then copy `dist` contents onto `main`
 
 Stay on `dev` unless the user explicitly asks to update the live Pages files on `main`.
 
-# Phrase: "publish all"
+# Phrase: "publish all" or "deploy all"
 
-When the user says **publish all**, do this in order without asking again:
+**publish all** and **deploy all** are the same phrase. When the user says either one, do this in order without asking again:
 
 1. On **`dev`**: stage only the relevant source changes, commit, and `git push origin dev`.
 2. On **`dev`**: run `npm run build`.
