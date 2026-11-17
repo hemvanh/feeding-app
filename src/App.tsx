@@ -13,7 +13,7 @@ import { db, newId } from './db'
 import { deleteGitHubFile, isGitHubConnected } from './github'
 import { getSyncStatus, subscribeSync } from './sync'
 import { useAllFeedings, useFeedings, usePet, usePets } from './hooks/useDb'
-import { FEEDER_TYPES, feederAmountUnit, feederSummary, isWaterChange, latestWeighing, formatGrams, outcomeLabel, petSexLabel, resultTagOutcome, tagPillClass, type FeedingEvent, type FeedingOutcome, type Pet } from './types'
+import { FEEDER_TYPES, feederAmountText, feederSummary, isWaterChange, latestWeighing, formatGrams, outcomeLabel, petSexLabel, resultTagOutcome, tagPillClass, type FeedingEvent, type FeedingOutcome, type Pet } from './types'
 import { coverPhotoPath } from './utils/coverPhoto'
 import { petIdFromQrText } from './utils/petQr'
 import { qrInkForPets, type QrInk } from './utils/qrColors'
@@ -501,8 +501,7 @@ function HomePage({ view }: { view: 'pets' | 'pending' }) {
       if (!urgency) continue
       const type = pet.feederType?.trim() || 'Unspecified'
       const key = type.toLowerCase()
-      const grams = typeof pet.feederWeightGrams === 'number' && pet.feederWeightGrams > 0 ? pet.feederWeightGrams : 0
-      const amount = grams ? `${grams}${feederAmountUnit(type)}` : ''
+      const amount = feederAmountText(pet)
       const item = {
         petId: pet.id,
         name: pet.name,

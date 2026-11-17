@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { FEEDER_TYPES, PET_SEXES, SPECIES, isPresetSpecies, isWaterChange, petSex, petSexLabel, type Pet, type PetSex } from '../types'
+import { FEEDER_TYPES, PET_SEXES, SPECIES, feederAmountText, isPresetSpecies, isWaterChange, petSex, petSexLabel, type Pet, type PetSex } from '../types'
 import { ConfirmDialog } from './ConfirmDialog'
 import { MorphPicker } from './MorphPicker'
 
@@ -10,7 +10,8 @@ type PetFields = {
   sex: PetSex
   feedingPeriodDays: number
   feederType: string
-  feederWeightGrams: number
+  feederAmount: string
+  feederWeightGrams: undefined
 }
 
 type PetFormProps = {
@@ -27,18 +28,14 @@ export function PetForm({ initial, submitLabel, confirmSave = false, onSubmit }:
   const [sex, setSex] = useState<PetSex>(petSex(initial?.sex))
   const [period, setPeriod] = useState(String(initial?.feedingPeriodDays ?? 7))
   const [feederType, setFeederType] = useState(initial?.feederType ?? '')
-  const [weight, setWeight] = useState(
-    initial?.feederWeightGrams && initial.feederWeightGrams > 0 ? String(initial.feederWeightGrams) : '',
-  )
+  const [amount, setAmount] = useState(initial ? feederAmountText(initial) : '')
   const [error, setError] = useState('')
   const [pending, setPending] = useState<PetFields | null>(null)
 
   function parsedForm() {
     const trimmed = name.trim()
     const days = Number(period)
-    const amount = Number(weight)
     const feeder = feederType.trim()
-    const volume = isWaterChange(feeder)
     const kind = species.trim()
     if (!trimmed) {
       setError('Give this pet a name.')
@@ -56,15 +53,6 @@ export function PetForm({ initial, submitLabel, confirmSave = false, onSubmit }:
       setError('Choose a feeder type, or type a custom one.')
       return null
     }
-    if (volume) {
-      if (!Number.isFinite(amount) || amount <= 0 || amount > 100000) {
-        setError('Volume must be greater than 0 liters.')
-        return null
-      }
-    } else if (!Number.isFinite(amount) || amount < 1 || amount > 100000) {
-      setError('Weight must be at least 1 gram.')
-      return null
-    }
     setError('')
     return {
       name: trimmed,
@@ -73,7 +61,8 @@ export function PetForm({ initial, submitLabel, confirmSave = false, onSubmit }:
       sex,
       feedingPeriodDays: Math.round(days),
       feederType: feeder,
-      feederWeightGrams: volume ? Math.round(amount * 10) / 10 : Math.round(amount),
+      feederAmount: amount.trim(),
+      feederWeightGrams: undefined,
     }
   }
 
@@ -191,17 +180,14 @@ export function PetForm({ initial, submitLabel, confirmSave = false, onSubmit }:
         <span className="field-hint">Pick Mouse, Rat, Chicken, or Water Change, or type any other feeder.</span>
       </fieldset>
       <label>
-        {isWaterChange(feederType) ? 'Volume (liters)' : 'Weight (grams)'}
+        Amount
         <input
-          type="number"
-          min={isWaterChange(feederType) ? 0.1 : 1}
-          max={100000}
-          step={isWaterChange(feederType) ? 0.1 : 1}
-          inputMode="decimal"
-          value={weight}
-          onChange={(e) => setWeight(e.target.value)}
-          placeholder={isWaterChange(feederType) ? 'e.g. 40' : 'e.g. 15'}
+          value={amount}
+          maxLength={40}
+          onChange={(e) => setAmount(e.target.value)}
+          placeholder={isWaterChange(feederType) ? 'e.g. 150L or NPK 2g/L' : 'e.g. 15g or 2 pinkies'}
         />
+        <span className="field-hint">A plain number gets {isWaterChange(feederType) ? 'L' : 'g'} added. Any other text, such as NPK 2g/L, shows as typed.</span>
       </label>
       {error ? <p className="error">{error}</p> : null}
       <button type="submit" className="primary-btn">

@@ -125,6 +125,7 @@ export type Pet = {
   sex?: PetSex
   feedingPeriodDays: number
   feederType?: string
+  feederAmount?: string
   feederWeightGrams?: number
   createdAt: string
   coverAt?: string
@@ -160,51 +161,20 @@ export type FeedingEvent = {
   tags?: string[]
 }
 
-export function feederSummary(pet: Pick<Pet, 'feederType' | 'feederWeightGrams'>): string {
+type FeederFields = Pick<Pet, 'feederType' | 'feederAmount' | 'feederWeightGrams'>
+
+/** Older pets store a number in `feederWeightGrams`; newer ones store free text in `feederAmount`. */
+export function feederAmountText(pet: FeederFields): string {
+  const text = pet.feederAmount?.trim()
+  if (text) return /^\d+([.,]\d+)?$/.test(text) ? `${text}${feederAmountUnit(pet.feederType)}` : text
+  const grams = pet.feederWeightGrams
+  return typeof grams === 'number' && grams > 0 ? `${grams}${feederAmountUnit(pet.feederType)}` : ''
+}
+
+export function feederSummary(pet: FeederFields): string {
   const type = pet.feederType?.trim() ?? ''
-  const amount = pet.feederWeightGrams
-  const hasAmount = typeof amount === 'number' && amount > 0
-  const unit = feederAmountUnit(type)
-  if (type && hasAmount) return `${type} · ${amount}${unit}`
-  if (type) return type
-  if (hasAmount) return `${amount}${unit}`
-  return ''
-}
-
-export type FeederPrepLine = {
-  type: string
-  grams: number | null
-  count: number
-}
-
-export function feederPrepLines(pets: Pet[]): FeederPrepLine[] {
-  const buckets = new Map<string, FeederPrepLine>()
-  for (const pet of pets) {
-    const type = pet.feederType?.trim() || 'Unspecified'
-    const grams = typeof pet.feederWeightGrams === 'number' && pet.feederWeightGrams > 0 ? pet.feederWeightGrams : null
-    const key = `${type.toLowerCase()}|${grams ?? 'none'}`
-    const current = buckets.get(key)
-    if (current) current.count += 1
-    else buckets.set(key, { type, grams, count: 1 })
-  }
-  const rankOf = (type: string) => {
-    const index = FEEDER_TYPES.findIndex((item) => item.toLowerCase() === type.toLowerCase())
-    if (index >= 0) return index
-    if (type === 'Unspecified') return 999
-    return 50
-  }
-  return [...buckets.values()].sort((a, b) => {
-    const rank = rankOf(a.type) - rankOf(b.type)
-    if (rank !== 0) return rank
-    if (a.type !== b.type) return a.type.localeCompare(b.type)
-    return (a.grams ?? 0) - (b.grams ?? 0)
-  })
-}
-
-export function feederPrepLabel(line: FeederPrepLine): string {
-  const unit = feederAmountUnit(line.type)
-  const amount = line.grams != null ? ` ${line.grams}${unit}` : ''
-  return `${line.count} × ${line.type}${amount}`
+  const amount = feederAmountText(pet)
+  return [type, amount].filter(Boolean).join(' · ')
 }
 
 export type PetSchedule = {
