@@ -40,12 +40,12 @@ Cover images are not inside the JSON. `Pet.coverAt` is a numeric stamp. The imag
 
 - `fed` or `water-changed`: last fed becomes that date.
 - Every record resets next due: event date plus `extensionDays` if it is above 0 (Extend checked), otherwise event date plus `feedingPeriodDays`.
-- Default extensions in the form: refused 1 day, regurgitated 2, molt 7, manual 3.
+- Default extensions in the form: refused 1 day, regurgitated 2, molt 3, manual 3. When Refused, Regurg., and Molt/Shed are combined, the largest of those defaults is used.
 - Prepare urgency skips pets already fed today. Groups sort by `FEEDER_TYPES`, then name. Unknown types sort after the presets and before `Unspecified`.
 
 ## Routes
 
-Hash routes in `src/App.tsx`: `#/`, `#/new`, `#/pet/{id}`, `#/pet/{id}/edit`, `#/print-qrs`.
+Hash routes in `src/App.tsx`: `#/` (All Pets), `#/pending`, `#/new`, `#/pet/{id}` (add a feeding; `?from=pending` returns to Pending), `#/pet/{id}/details`, `#/pet/{id}/edit` (`?from=home` returns to All Pets), `#/print-qrs`. `?focus=` on All Pets is the pet a prepare chip should scroll to.
 
 ## Stack
 
