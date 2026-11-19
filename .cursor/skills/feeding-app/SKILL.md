@@ -30,13 +30,14 @@ A new chat should treat the sections below as the contract. Change only the feat
 
 **publish all** and **deploy all** are interchangeable. Either phrase runs this same procedure, in order, without asking again. Skip an empty `dev` commit when the tree is clean; still build and update `main` if the live site needs that build.
 
-1. On `dev`, stage only the relevant source changes, commit, and `git push origin dev`.
-2. On `dev`, run `npm run build`.
-3. `git checkout main`, then `git pull --rebase origin main` so newer data commits are included first.
-4. Copy these files from `dist/` onto the `main` working tree root: `index.html`, `favicon.svg`, `icons.svg`, `manifest.json`, `sw.js`, `pwa-icon-192.png`, `pwa-icon-512.png`, `apple-touch-icon.png`, `pwa-icon.svg`. Do not copy `feeding-data.json`. Do not `git add` `dist/` or `node_modules/`.
-5. Commit the copied site files. `main` messages start with `Publish`. `dev` messages are normal sentences about why.
-6. `git push origin main`.
-7. `git checkout dev` and leave that branch checked out.
+1. On `dev`, before any commit, update this skill, and [reference.md](reference.md) when data shape, sync, or hosting changed, so the manual matches the latest behavior from this session's changes. Do not publish a skill that still describes the old behavior.
+2. On `dev`, stage only the relevant source changes, including that skill update, commit, and `git push origin dev`.
+3. On `dev`, run `npm run build`.
+4. `git checkout main`, then `git pull --rebase origin main` so newer data commits are included first.
+5. Copy these files from `dist/` onto the `main` working tree root: `index.html`, `favicon.svg`, `icons.svg`, `manifest.json`, `sw.js`, `pwa-icon-192.png`, `pwa-icon-512.png`, `apple-touch-icon.png`, `pwa-icon.svg`. Do not copy `feeding-data.json`. Do not `git add` `dist/` or `node_modules/`.
+6. Commit the copied site files. `main` messages start with `Publish`. `dev` messages are normal sentences about why.
+7. `git push origin main`.
+8. `git checkout dev` and leave that branch checked out.
 
 `main` often moves while you build because the app commits `Update feeding data` from a phone or PC. Rebase onto that, then push. Do not force-push.
 
