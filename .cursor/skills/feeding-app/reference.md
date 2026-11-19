@@ -41,7 +41,7 @@ Cover images are not inside the JSON. `Pet.coverAt` is a numeric stamp. The imag
 - `fed` or `water-changed`: last fed becomes that date.
 - Every record resets next due: event date plus `extensionDays` if it is above 0 (Extend checked), otherwise event date plus `feedingPeriodDays`.
 - Default extensions in the form: refused 1 day, regurgitated 2, molt 3, manual 3. When Refused, Regurg., and Molt/Shed are combined, the largest of those defaults is used.
-- Prepare urgency skips pets already fed today. Groups sort by `FEEDER_TYPES`, then name. Unknown types sort after the presets and before `Unspecified`.
+- Prepare urgency skips pets already fed today. Groups sort by `FEEDER_TYPES`, then name. Unknown types sort after the presets and before `Unspecified`. Inside a type, amount groups sort numeric weights ascending, then other text, then `Unspecified`.
 
 ## Routes
 

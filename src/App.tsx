@@ -487,11 +487,25 @@ function HomePage({ view }: { view: 'pets' | 'pending' }) {
       if (type === 'Unspecified') return 999
       return 50
     }
+    const amountRank = (amount: string) => {
+      if (!amount) return [2, 0, ''] as const
+      const match = /^(\d+(?:[.,]\d+)?)(g|l)$/i.exec(amount)
+      if (match) return [0, Number(match[1].replace(',', '.')), amount.toLowerCase()] as const
+      return [1, 0, amount.toLowerCase()] as const
+    }
+    const compareAmount = (a: string, b: string) => {
+      const left = amountRank(a)
+      const right = amountRank(b)
+      if (left[0] !== right[0]) return left[0] - right[0]
+      if (left[1] !== right[1]) return left[1] - right[1]
+      return left[2].localeCompare(right[2]) || a.localeCompare(b)
+    }
+    type PrepItem = { petId: string; name: string; label: string; urgency: 'today' | 'late' | 'very-late' }
     const buckets = new Map<string, {
       key: string
       label: string
       type: string
-      items: { petId: string; name: string; label: string; urgency: 'today' | 'late' | 'very-late' }[]
+      sections: Map<string, { key: string; label: string; amount: string; items: PrepItem[] }>
     }>()
     for (const pet of pets) {
       const petEvents = events.filter((event) => event.petId === pet.id)
@@ -502,23 +516,38 @@ function HomePage({ view }: { view: 'pets' | 'pending' }) {
       const type = pet.feederType?.trim() || 'Unspecified'
       const key = type.toLowerCase()
       const amount = feederAmountText(pet)
-      const item = {
+      const item: PrepItem = {
         petId: pet.id,
         name: pet.name,
-        label: amount ? `${pet.name} · ${amount}` : pet.name,
+        label: pet.name,
         urgency,
       }
-      const current = buckets.get(key)
-      if (current) current.items.push(item)
-      else buckets.set(key, { key, label: type, type, items: [item] })
+      let current = buckets.get(key)
+      if (!current) {
+        current = { key, label: type, type, sections: new Map() }
+        buckets.set(key, current)
+      }
+      const sectionKey = `${key}\0${amount}`
+      const section = current.sections.get(sectionKey)
+      if (section) section.items.push(item)
+      else current.sections.set(sectionKey, { key: sectionKey, label: amount || 'Unspecified', amount, items: [item] })
+    }
+    const byUrgencyThenName = (a: PrepItem, b: PrepItem) => {
+      if (urgencyRank[a.urgency] !== urgencyRank[b.urgency]) return urgencyRank[a.urgency] - urgencyRank[b.urgency]
+      return a.name.localeCompare(b.name)
     }
     return [...buckets.values()]
       .map((group) => ({
-        ...group,
-        items: [...group.items].sort((a, b) => {
-          if (urgencyRank[a.urgency] !== urgencyRank[b.urgency]) return urgencyRank[a.urgency] - urgencyRank[b.urgency]
-          return a.name.localeCompare(b.name)
-        }),
+        key: group.key,
+        label: group.label,
+        type: group.type,
+        sections: [...group.sections.values()]
+          .sort((a, b) => compareAmount(a.amount, b.amount))
+          .map((section) => ({
+            key: section.key,
+            label: section.label,
+            items: [...section.items].sort(byUrgencyThenName),
+          })),
       }))
       .sort((a, b) => {
         const rank = typeRank(a.type) - typeRank(b.type)
@@ -620,15 +649,23 @@ function HomePage({ view }: { view: 'pets' | 'pending' }) {
       columnEl.className = 'feeder-prep-col'
       const chipsEl = document.createElement('div')
       chipsEl.className = 'feeder-prep-chips'
+      const groupEl = document.createElement('div')
+      groupEl.className = 'feeder-prep-group'
+      const weightsEl = document.createElement('div')
+      weightsEl.className = 'feeder-prep-weights'
       split.style.cssText = 'position:absolute;visibility:hidden;pointer-events:none;'
-      grid.append(split, columnEl, chipsEl)
+      grid.append(split, columnEl, chipsEl, groupEl, weightsEl)
       const column = Number.parseFloat(getComputedStyle(split).columnGap) || 12
       const group = Number.parseFloat(getComputedStyle(columnEl).rowGap) || 10
       const chip = Number.parseFloat(getComputedStyle(chipsEl).columnGap) || 8
+      const stack = Number.parseFloat(getComputedStyle(groupEl).rowGap) || 8
+      const section = Number.parseFloat(getComputedStyle(weightsEl).rowGap) || 8
       split.remove()
       columnEl.remove()
       chipsEl.remove()
-      const plan = planPrepColumns(measurePrepGroups(prepGroups), width, { column, chip, group })
+      groupEl.remove()
+      weightsEl.remove()
+      const plan = planPrepColumns(measurePrepGroups(prepGroups), width, { column, chip, group, section, stack })
       const signature = plan.rows.map((row) => (
         row.kind === 'full'
           ? `f:${row.groups.map((index) => prepGroups[index]?.key).join(',')}`
@@ -689,16 +726,23 @@ function HomePage({ view }: { view: 'pets' | 'pending' }) {
     return (
       <div key={group.key} className="feeder-prep-group">
         <h3>{group.label}</h3>
-        <div className="feeder-prep-chips">
-          {group.items.map((item) => (
-            <button
-              key={item.petId}
-              type="button"
-              className={`feeder-prep-chip ${item.urgency}`}
-              onClick={() => go(`/?focus=${encodeURIComponent(item.petId)}`)}
-            >
-              {item.label}
-            </button>
+        <div className="feeder-prep-weights">
+          {group.sections.map((section) => (
+            <div key={section.key} className="feeder-prep-weight">
+              <h4>{section.label}</h4>
+              <div className="feeder-prep-chips">
+                {section.items.map((item) => (
+                  <button
+                    key={item.petId}
+                    type="button"
+                    className={`feeder-prep-chip ${item.urgency}`}
+                    onClick={() => go(`/?focus=${encodeURIComponent(item.petId)}`)}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            </div>
           ))}
         </div>
       </div>

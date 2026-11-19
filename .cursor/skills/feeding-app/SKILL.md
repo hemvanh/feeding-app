@@ -71,7 +71,7 @@ A new chat should treat the sections below as the contract. Change only the feat
 ## Home, Pending, and navigation
 
 - `#/` is All Pets: search and pet cards, no prepare list. `#/pending` is only the prepare list. They share one history entry (`src/utils/navHistory.ts`). Returning to either drops pages opened after it, so the phone Back button leaves the app.
-- Prepare groups are feeder type only. Chip text includes the amount (`Name · 10g` or `Name · NPK 2g/L`). A chip opens All Pets, waits for that view to finish opening, scrolls to the pet, then pulses the card. Choosing the same chip again after returning to Pending plays that again.
+- Prepare groups are feeder type. Inside each type, chips are grouped by feeder amount (`5g`, `2 pinkies`, `NPK 2g/L`); pets with no amount sit under `Unspecified`. Amount groups sort numeric weights ascending, then other text, then `Unspecified`. Chip text is the pet name. The amount stays on the weight heading. Columns are still sized from the tags: a tag stays on one line when the row has room, and a group that cannot sit beside another group takes the full row. A chip opens All Pets, waits for that view to finish opening, scrolls to the pet, then pulses the card. Choosing the same chip again after returning to Pending plays that again.
 - Saving a feeding returns to Pending. The All Pets search field blurs on Enter so the phone keyboard closes.
 - The home top bar stays docked. After the page moves, it raises and a black-to-transparent fade (18px, 240ms) appears under it. At the top of the page that edge stays flush. Switching All Pets and Pending snaps the fade (`is-snap`) so it does not play on a list that is already at the top. Search stays in the docked bar on All Pets.
 - The GitHub JSON panel stays hidden while the browser is connected. Menu order: JSON link, print, scan, New. Beside Menu are Pending (clock) and All Pets.
@@ -88,7 +88,7 @@ A new chat should treat the sections below as the contract. Change only the feat
 
 `src/components/PetForm.tsx`. Species can be a preset or custom text. Sex is male, female, or unsexed. Feeder type is Mouse, Rat, Chicken, Water Change, or custom text.
 
-The Amount field is optional free text, at most 40 characters, saved as `feederAmount`. Saving the form clears the old numeric `feederWeightGrams`. `feederAmountText` shows a plain number with `g`, or `L` when the feeder is Water Change. Any other text, such as `NPK 2g/L` or `10g`, is shown exactly as typed. Older pets that only have `feederWeightGrams` still show `{number}g` or `{number}L`. That text is what cards, summaries, and Pending chips display.
+The Amount field is optional free text, at most 40 characters, saved as `feederAmount`. Saving the form clears the old numeric `feederWeightGrams`. `feederAmountText` shows a plain number with `g`, or `L` when the feeder is Water Change. Any other text, such as `NPK 2g/L` or `10g`, is shown exactly as typed. Older pets that only have `feederWeightGrams` still show `{number}g` or `{number}L`. That text is what cards and summaries display. Pending chips show the pet name; the amount is the weight heading.
 
 ## Look
 

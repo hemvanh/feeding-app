@@ -1,6 +1,11 @@
-export type MeasuredGroup = {
+export type MeasuredSection = {
   labelWidth: number
   chips: number[]
+}
+
+export type MeasuredGroup = {
+  labelWidth: number
+  sections: MeasuredSection[]
 }
 
 export type PrepRow = {
@@ -17,12 +22,41 @@ export type PrepLayout = {
   rows: PrepRow[]
 }
 
-type Gaps = { column: number; chip: number; group: number }
+type Gaps = { column: number; chip: number; group: number; section: number; stack: number }
 
 const CHIP_ROW = 30
 
 function needOf(group: MeasuredGroup) {
-  return Math.max(group.labelWidth, ...group.chips, 0)
+  return Math.max(
+    group.labelWidth,
+    ...group.sections.flatMap((section) => [section.labelWidth, ...section.chips]),
+    0,
+  )
+}
+
+function headingLines(labelWidth: number, width: number) {
+  return labelWidth > width ? Math.ceil(labelWidth / width) : 1
+}
+
+function chipRows(chips: number[], width: number, chipGap: number) {
+  let used = 0
+  let rows = 0
+  for (const chip of chips) {
+    if (chip > width) {
+      if (used > 0) rows += 1
+      rows += Math.ceil(chip / width)
+      used = 0
+    } else if (used === 0) {
+      used = chip
+    } else if (used + chipGap + chip <= width) {
+      used += chipGap + chip
+    } else {
+      rows += 1
+      used = chip
+    }
+  }
+  if (used > 0) rows += 1
+  return rows
 }
 
 function columnHeight(groups: MeasuredGroup[], indexes: number[], width: number, gaps: Gaps) {
@@ -30,26 +64,13 @@ function columnHeight(groups: MeasuredGroup[], indexes: number[], width: number,
   indexes.forEach((index, position) => {
     if (position > 0) height += gaps.group
     const group = groups[index]
-    const headingLines = group.labelWidth > width ? Math.ceil(group.labelWidth / width) : 1
-    height += headingLines * CHIP_ROW
-    let used = 0
-    let rows = 0
-    for (const chip of group.chips) {
-      if (chip > width) {
-        if (used > 0) rows += 1
-        rows += Math.ceil(chip / width)
-        used = 0
-      } else if (used === 0) {
-        used = chip
-      } else if (used + gaps.chip + chip <= width) {
-        used += gaps.chip + chip
-      } else {
-        rows += 1
-        used = chip
-      }
-    }
-    if (used > 0) rows += 1
-    height += rows * CHIP_ROW
+    height += headingLines(group.labelWidth, width) * CHIP_ROW
+    group.sections.forEach((section, sectionIndex) => {
+      height += sectionIndex === 0 ? gaps.stack : gaps.section
+      height += headingLines(section.labelWidth, width) * CHIP_ROW
+      height += gaps.stack
+      height += chipRows(section.chips, width, gaps.chip) * CHIP_ROW
+    })
   })
   return height
 }
@@ -70,11 +91,13 @@ function widthChoices(min: number, max: number, groups: MeasuredGroup[], left: n
   }
   const edges = (indexes: number[], side: 'left' | 'right') => {
     for (const index of indexes) {
-      let sum = 0
-      groups[index].chips.forEach((chip, chipIndex) => {
-        sum = chipIndex === 0 ? chip : sum + chipGap + chip
-        add(side === 'left' ? sum : free - sum)
-      })
+      for (const section of groups[index].sections) {
+        let sum = 0
+        section.chips.forEach((chip, chipIndex) => {
+          sum = chipIndex === 0 ? chip : sum + chipGap + chip
+          add(side === 'left' ? sum : free - sum)
+        })
+      }
     }
   }
   edges(left, 'left')
@@ -185,25 +208,36 @@ export function planPrepColumns(groups: MeasuredGroup[], containerWidth: number,
 const SLACK = 2
 
 export function measurePrepGroups(
-  groups: { label: string; items: { label: string }[] }[],
+  groups: { label: string; sections: { label: string; items: { label: string }[] }[] }[],
 ): MeasuredGroup[] {
   const host = document.createElement('div')
   host.className = 'feeder-prep-group'
   host.style.cssText = 'position:fixed;left:-9999px;top:0;width:max-content;visibility:hidden;pointer-events:none;'
   const heading = document.createElement('h3')
   heading.style.cssText = 'display:inline-block;width:max-content;white-space:nowrap;'
+  const weight = document.createElement('div')
+  weight.className = 'feeder-prep-weight'
+  const weightHeading = document.createElement('h4')
+  weightHeading.style.cssText = 'display:inline-block;width:max-content;white-space:nowrap;'
+  weight.append(weightHeading)
   const chip = document.createElement('span')
   chip.className = 'feeder-prep-chip'
   chip.style.cssText = 'display:inline-block;width:max-content;white-space:nowrap;'
-  host.append(heading, chip)
+  host.append(heading, weight, chip)
   document.body.append(host)
   const measured = groups.map((group) => {
     heading.textContent = group.label
     return {
       labelWidth: Math.ceil(heading.offsetWidth) + SLACK,
-      chips: group.items.map((item) => {
-        chip.textContent = item.label
-        return Math.ceil(chip.offsetWidth) + SLACK
+      sections: group.sections.map((section) => {
+        weightHeading.textContent = section.label
+        return {
+          labelWidth: Math.ceil(weightHeading.offsetWidth) + SLACK,
+          chips: section.items.map((item) => {
+            chip.textContent = item.label
+            return Math.ceil(chip.offsetWidth) + SLACK
+          }),
+        }
       }),
     }
   })
