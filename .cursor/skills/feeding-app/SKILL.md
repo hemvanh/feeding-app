@@ -19,7 +19,7 @@ A new chat should treat the sections below as the contract. Change only the feat
 
 - `dev` is the Vite source. `main` is only the built Pages site. Never merge `dev` into `main`. Never put `src/`, `package.json`, `dist/`, or `node_modules/` on `main`.
 - Do not overwrite live `feeding-data.json` or `pet-photos/` unless the user explicitly asks. A production build copies a seed JSON into `dist/`; that seed is not the live database.
-- Do not commit unless the user asks, or they say **publish all** or **deploy all** (same procedure). Leave `.agents/` untracked.
+- Do not commit unless the user asks, or they say **publish all** or **deploy all** (same procedure).
 - Do not run `git config`. This machine has no commit identity. For every commit, set only the process environment: `GIT_AUTHOR_NAME` and `GIT_COMMITTER_NAME` = `hemvanh`, `GIT_AUTHOR_EMAIL` and `GIT_COMMITTER_EMAIL` = `hemvanh@users.noreply.github.com`.
 - Shell is PowerShell. Do not use `&&` or bash heredocs. Commit with a PowerShell here-string: `git commit -m @" ... "@`.
 - Never force-push. If `git push origin main` is rejected, `git pull --rebase origin main`, then push again.
