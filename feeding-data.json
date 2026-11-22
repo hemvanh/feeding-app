@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-11-22T17:50:40.176Z",
+  "updatedAt": "2026-11-22T17:51:01.319Z",
   "pets": [
     {
       "id": "0865826f-79d8-4d0a-a6ee-926ab13c6346",
@@ -2372,6 +2372,18 @@
       "createdAt": "2026-10-16T18:02:54.530Z",
       "tags": [
         "Ate"
+      ]
+    },
+    {
+      "id": "e6f3d139-ae43-46ae-91c0-5e89c22fad98",
+      "petId": "de71d3fc-b1b9-48d5-aace-4b6aca5438dd",
+      "date": "2026-11-22",
+      "note": "",
+      "outcome": "extended",
+      "extensionDays": 3,
+      "createdAt": "2026-11-22T17:51:01.064Z",
+      "tags": [
+        "Molt/Shed"
       ]
     },
     {
