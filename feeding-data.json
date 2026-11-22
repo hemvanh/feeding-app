@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-11-22T17:51:01.319Z",
+  "updatedAt": "2026-11-22T17:53:12.515Z",
   "pets": [
     {
       "id": "0865826f-79d8-4d0a-a6ee-926ab13c6346",
@@ -40,12 +40,12 @@
         "Albino",
         "Conda"
       ],
-      "feedingPeriodDays": 4,
+      "feedingPeriodDays": 5,
       "createdAt": "2026-09-03T19:26:54.800Z",
       "coverAt": "1788537862959",
       "feederType": "Mouse",
-      "feederWeightGrams": 10,
-      "sex": "unsexed"
+      "sex": "unsexed",
+      "feederAmount": "10g"
     },
     {
       "id": "24562c55-b620-4271-bab0-01bf39f3e3e5",
