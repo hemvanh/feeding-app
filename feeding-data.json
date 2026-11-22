@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-11-22T17:53:12.515Z",
+  "updatedAt": "2026-11-22T17:53:36.435Z",
   "pets": [
     {
       "id": "0865826f-79d8-4d0a-a6ee-926ab13c6346",
@@ -345,12 +345,12 @@
       "morphs": [
         "Sable"
       ],
-      "feedingPeriodDays": 4,
+      "feedingPeriodDays": 5,
       "createdAt": "2026-09-03T19:28:13.402Z",
       "coverAt": "1788543082248",
       "feederType": "Mouse",
-      "feederWeightGrams": 10,
-      "sex": "unsexed"
+      "sex": "unsexed",
+      "feederAmount": "10g"
     },
     {
       "id": "d7fe6d29-0b97-435f-95a0-dfa591590e68",
